@@ -24,8 +24,8 @@ func Model[T any](db IDB) DBWrap[T] {
 
 // TODO: support for time.Time
 
-func (dbw *DBWrap[T]) Select(options ...SelectOptsFunc) (*T, error) {
-	var opts SelectOpts
+func (dbw *DBWrap[T]) Select(options ...OptsFunc) (*T, error) {
+	var opts Opts
 	for _, option := range options {
 		option(&opts)
 	}
@@ -53,4 +53,54 @@ func (dbw *DBWrap[T]) Select(options ...SelectOptsFunc) (*T, error) {
 		return nil, err
 	}
 	return &data, nil
+}
+
+// TODO: support for ID field
+
+func (dbw *DBWrap[T]) Create(content *T, options ...OptsFunc) error {
+	var opts Opts
+	for _, option := range options {
+		option(&opts)
+	}
+
+	contentStr := " CONTENT {"
+	v := reflect.ValueOf(content).Elem()
+	t := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldType := t.Field(i)
+		surrealTag := fieldType.Tag.Get("surreal")
+		if surrealTag == "" {
+			surrealTag = fieldType.Name
+		}
+		switch field.Kind() {
+		case reflect.String:
+			contentStr += fmt.Sprintf(`%s:"%v",`, surrealTag, field.Interface())
+		default:
+			contentStr += fmt.Sprintf("%s:%v,", surrealTag, field.Interface())
+		}
+	}
+
+	contentStr = contentStr[:len(contentStr)-1] + "} "
+
+	query := fmt.Sprintf("CREATE %s%s%s%s%s%s%s",
+		only(opts.only),
+		dbw.model,
+		id(opts.id),
+		contentStr,
+		returns(opts.returns),
+		timeout(opts.timeout),
+		parallel(opts.parallel),
+	)
+
+	query = strings.TrimSpace(query)
+	res, err := dbw.db.Query(query + ";")
+	data, err := surrealdb.SmartUnmarshal[T](res, err)
+	if err != nil {
+		return err
+	}
+
+	scan(&content, data)
+	return nil
 }

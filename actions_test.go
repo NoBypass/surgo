@@ -7,15 +7,15 @@ import (
 )
 
 type SampleModel struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-	Age  int    `json:"age"`
-	Sex  bool   `json:"sex"`
+	ID   string `surreal:"id"`
+	Name string `surreal:"name"`
+	Age  int    `surreal:"age"`
+	Bad  bool   `surreal:"bad"`
 	// CreatedAt time.Time `json:"created_at"`
 }
 
 type SampleID struct {
-	Pos int `json:"pos"`
+	Pos int
 	// At time.Time `json:"at"`
 }
 
@@ -33,6 +33,50 @@ var testDB = Model[SampleModel](&DBMock{})
 func TestModel(t *testing.T) {
 	t.Run("With a model", func(t *testing.T) {
 		assert.Equal(t, "SampleModel", testDB.model)
+	})
+}
+
+func TestCreate(t *testing.T) {
+	sampleModel := &SampleModel{ID: "123", Name: "foo", Age: 20, Bad: false}
+	t.Run("With a model", func(t *testing.T) {
+		err := testDB.Create(sampleModel)
+		assert.NoError(t, err)
+		assert.Equal(t,
+			`CREATE SampleModel CONTENT {id:"123",name:"foo",age:20,bad:false};`,
+			testDB.db.(*DBMock).query,
+		)
+	})
+	t.Run("With an id", func(t *testing.T) {
+		err := testDB.Create(sampleModel, ID("123"))
+		assert.NoError(t, err)
+		assert.Equal(t,
+			`CREATE SampleModel:123 CONTENT {id:"123",name:"foo",age:20,bad:false};`,
+			testDB.db.(*DBMock).query,
+		)
+	})
+	t.Run("With a return", func(t *testing.T) {
+		err := testDB.Create(sampleModel, Return(ReturnBefore))
+		assert.NoError(t, err)
+		assert.Equal(t,
+			`CREATE SampleModel CONTENT {id:"123",name:"foo",age:20,bad:false} RETURN BEFORE;`,
+			testDB.db.(*DBMock).query,
+		)
+	})
+	t.Run("With a timeout", func(t *testing.T) {
+		err := testDB.Create(sampleModel, Timeout(10*time.Second))
+		assert.NoError(t, err)
+		assert.Equal(t,
+			`CREATE SampleModel CONTENT {id:"123",name:"foo",age:20,bad:false} TIMEOUT 10000ms;`,
+			testDB.db.(*DBMock).query,
+		)
+	})
+	t.Run("With a parallel", func(t *testing.T) {
+		err := testDB.Create(sampleModel, Parallel())
+		assert.NoError(t, err)
+		assert.Equal(t,
+			`CREATE SampleModel CONTENT {id:"123",name:"foo",age:20,bad:false} PARALLEL;`,
+			testDB.db.(*DBMock).query,
+		)
 	})
 }
 

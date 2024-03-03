@@ -7,10 +7,11 @@ import (
 	"time"
 )
 
-type SelectOptsFunc func(*SelectOpts)
-type SelectOpts struct {
+type OptsFunc func(*Opts)
+type Opts struct {
 	timeout     time.Duration
 	fetchFields []string
+	returns     []string
 	order       []string
 	groups      []string
 	fields      []string
@@ -25,36 +26,36 @@ type SelectOpts struct {
 
 // Fields is an option for `Select` to specify the fields to return.
 // You can also use the `AS` keyword to use an alias for the fields.
-func Fields(fields ...string) SelectOptsFunc {
-	return func(o *SelectOpts) {
+func Fields(fields ...string) OptsFunc {
+	return func(o *Opts) {
 		o.fields = fields
 	}
 }
 
 // Only is an option for `Select` to specifies to only select a single record.
-func Only() SelectOptsFunc {
-	return func(o *SelectOpts) {
+func Only() OptsFunc {
+	return func(o *Opts) {
 		o.only = true
 	}
 }
 
 // Omit is an option for `Select` to specify the fields to omit from the result.
-func Omit(fields ...string) SelectOptsFunc {
-	return func(o *SelectOpts) {
+func Omit(fields ...string) OptsFunc {
+	return func(o *Opts) {
 		o.omit = fields
 	}
 }
 
 // Where is an option for `Select` to specify the condition to filter the records.
-func Where(condition string) SelectOptsFunc {
-	return func(o *SelectOpts) {
+func Where(condition string) OptsFunc {
+	return func(o *Opts) {
 		o.where = condition
 	}
 }
 
 // GroupBy is an option for `Select` to specify the fields to group the records by.
-func GroupBy(fields ...string) SelectOptsFunc {
-	return func(o *SelectOpts) {
+func GroupBy(fields ...string) OptsFunc {
+	return func(o *Opts) {
 		o.groups = fields
 	}
 }
@@ -67,12 +68,12 @@ type OrderOpts struct {
 // OrderBy is an option for `Select` to specify the fields to order the records by.
 // It takes a list of `OrderOptsFunc` to specify the order of the fields. You can
 // use the `Asc` and `Desc` functions to specify the order.
-func OrderBy(fields ...OrderOptsFunc) SelectOptsFunc {
+func OrderBy(fields ...OrderOptsFunc) OptsFunc {
 	var opts OrderOpts
 	for _, option := range fields {
 		option(&opts)
 	}
-	return func(o *SelectOpts) {
+	return func(o *Opts) {
 		o.order = opts.orders
 	}
 }
@@ -92,29 +93,29 @@ func Desc(field string) OrderOptsFunc {
 }
 
 // Start is an option for `Select` to specify the starting index of the records to return.
-func Start(start int) SelectOptsFunc {
-	return func(o *SelectOpts) {
+func Start(start int) OptsFunc {
+	return func(o *Opts) {
 		o.start = start
 	}
 }
 
 // Limit is an option for `Select` to specify the maximum number of records to return.
-func Limit(limit int) SelectOptsFunc {
-	return func(o *SelectOpts) {
+func Limit(limit int) OptsFunc {
+	return func(o *Opts) {
 		o.limit = limit
 	}
 }
 
 // Fetch is an option for `Select` to specify the fields to fetch from the result.
-func Fetch(fields ...string) SelectOptsFunc {
-	return func(o *SelectOpts) {
+func Fetch(fields ...string) OptsFunc {
+	return func(o *Opts) {
 		o.fetchFields = fields
 	}
 }
 
 // Timeout is an option for `Select` to specify the maximum time to wait for the query to complete.
-func Timeout(d time.Duration) SelectOptsFunc {
-	return func(o *SelectOpts) {
+func Timeout(d time.Duration) OptsFunc {
+	return func(o *Opts) {
 		o.timeout = d
 	}
 }
@@ -135,7 +136,7 @@ type SliceOrString[T any] interface {
 // (The `Bar` type is just an example, you can use any type you want. It is
 // strongly recommended to use a struct for this purpose, so you can make
 // use of type safety.)
-func ID[T ~string | ~[2]any](id T) SelectOptsFunc {
+func ID[T ~string | ~[2]any](id T) OptsFunc {
 	idStrs := make([]string, 0, 2)
 	if reflect.TypeOf(id).Kind() == reflect.Array {
 		for _, v := range reflect.ValueOf(id).Interface().([2]interface{}) {
@@ -157,14 +158,21 @@ func ID[T ~string | ~[2]any](id T) SelectOptsFunc {
 	} else {
 		idStrs = append(idStrs, fmt.Sprintf("%s", id))
 	}
-	return func(o *SelectOpts) {
+	return func(o *Opts) {
 		o.id = strings.Join(idStrs, "..")
 	}
 }
 
 // Parallel is an option for `Select` to specify to run the query in parallel.
-func Parallel() SelectOptsFunc {
-	return func(o *SelectOpts) {
+func Parallel() OptsFunc {
+	return func(o *Opts) {
 		o.parallel = true
+	}
+}
+
+// Return is an option for `Create` to specify the fields to return after the record is inserted.
+func Return(fields ...string) OptsFunc {
+	return func(o *Opts) {
+		o.returns = fields
 	}
 }

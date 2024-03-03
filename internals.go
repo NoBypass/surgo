@@ -11,6 +11,10 @@ func (db *DB) Query(query string) (interface{}, error) {
 	return nil, nil
 }
 
+func scan[T any](scan **T, content T) {
+	*scan = &content
+}
+
 func fields(fields []string) string {
 	if len(fields) == 0 {
 		return "*"
@@ -86,7 +90,7 @@ func id(ID string) string {
 	if ID == "" {
 		return ""
 	}
-	return fmt.Sprintf(":%s ", ID)
+	return fmt.Sprintf(":%s", ID)
 }
 
 func parallel(condition bool) string {
@@ -94,4 +98,11 @@ func parallel(condition bool) string {
 		return "PARALLEL"
 	}
 	return ""
+}
+
+func returns(fields []string) string {
+	if len(fields) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("RETURN %s ", strings.Join(fields, ", "))
 }
