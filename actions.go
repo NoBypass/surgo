@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/surrealdb/surrealdb.go"
 	"reflect"
-	"strings"
 )
 
 // TODO: support for time.Time
@@ -31,8 +30,7 @@ func (dbw *DBWrap[T]) Select(obj *T, options ...OptsFunc) error {
 		parallel(opts.parallel),
 	)
 
-	query = strings.TrimSpace(query)
-	res, err := dbw.db.Query(query + ";")
+	res, err := dbw.db.Query(query)
 	data, err := surrealdb.SmartUnmarshal[T](res, err)
 	scan(&obj, data)
 	return err
@@ -78,8 +76,7 @@ func (dbw *DBWrap[T]) Create(content *T, options ...OptsFunc) error {
 		parallel(opts.parallel),
 	)
 
-	query = strings.TrimSpace(query)
-	res, err := dbw.db.Query(query + ";")
+	res, err := dbw.db.Query(query)
 	data, err := surrealdb.SmartUnmarshal[T](res, err)
 	if err != nil {
 		return err
@@ -105,8 +102,7 @@ func (dbw *DBWrap[T]) Delete(ID string, options ...OptsFunc) (*T, error) {
 		parallel(opts.parallel),
 	)
 
-	query = strings.TrimSpace(query)
-	res, err := dbw.db.Query(query + ";")
+	res, err := dbw.db.Query(query)
 	data, err := surrealdb.SmartUnmarshal[T](res, err)
 	if err != nil {
 		return nil, err
@@ -153,8 +149,7 @@ func (dbw *DBWrap[T]) Update(content *T, options ...OptsFunc) error {
 		parallel(opts.parallel),
 	)
 
-	query = strings.TrimSpace(query)
-	_, err := dbw.db.Query(query + ";")
+	_, err := dbw.db.Query(query)
 	if err != nil {
 		return err
 	}

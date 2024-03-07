@@ -7,8 +7,8 @@ import (
 )
 
 func (db *DB) Query(query string) (interface{}, error) {
-	println(query)
-	return nil, nil
+	query = strings.TrimSpace(query) + ";"
+	return db.db.Query(query, nil)
 }
 
 func scan[T any](scan **T, content T) {
