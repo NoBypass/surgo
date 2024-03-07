@@ -1,4 +1,4 @@
-module surgo
+module github.com/NoBypass/surgo
 
 go 1.22
 
