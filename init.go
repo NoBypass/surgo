@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/surrealdb/surrealdb.go"
+	"reflect"
 )
 
 type Option [2]string
@@ -17,6 +18,9 @@ type IDB interface {
 	Query(string) (interface{}, error)
 }
 
+// New creates a new database connection and returns a DB object.
+// You can use the `User`, `Pass`, `Namespace`, and `Database` options
+// to set the username, password, namespace, and database name.
 func New(ctx context.Context, url string, options ...Option) (*DB, error) {
 	db, err := surrealdb.New(fmt.Sprintf("wss://%s/rpc", url))
 	if err != nil {
@@ -52,6 +56,21 @@ func New(ctx context.Context, url string, options ...Option) (*DB, error) {
 		db:  db,
 		ctx: ctx,
 	}, nil
+}
+
+type DBWrap[T any] struct {
+	db    IDB
+	model string
+}
+
+// Model takes a pointer to a record and a database connection. It is
+// used to provide type safety in queries. The name of the given record
+// is used as the database table name (using reflect).
+func Model[T any](db IDB) DBWrap[T] {
+	return DBWrap[T]{
+		db:    db,
+		model: reflect.TypeOf(new(T)).Elem().Name(),
+	}
 }
 
 func User(username string) Option {

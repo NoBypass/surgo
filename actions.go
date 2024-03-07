@@ -7,24 +7,9 @@ import (
 	"strings"
 )
 
-type DBWrap[T any] struct {
-	db    IDB
-	model string
-}
-
-// Model takes a pointer to a record and a database connection. It is
-// used to provide type safety in queries. The name of the given record
-// is used as the database table name (using reflect).
-func Model[T any](db IDB) DBWrap[T] {
-	return DBWrap[T]{
-		db:    db,
-		model: reflect.TypeOf(new(T)).Elem().Name(),
-	}
-}
-
 // TODO: support for time.Time
 
-func (dbw *DBWrap[T]) Select(options ...OptsFunc) (*T, error) {
+func (dbw *DBWrap[T]) Select(obj *T, options ...OptsFunc) error {
 	var opts Opts
 	for _, option := range options {
 		option(&opts)
@@ -49,10 +34,8 @@ func (dbw *DBWrap[T]) Select(options ...OptsFunc) (*T, error) {
 	query = strings.TrimSpace(query)
 	res, err := dbw.db.Query(query + ";")
 	data, err := surrealdb.SmartUnmarshal[T](res, err)
-	if err != nil {
-		return nil, err
-	}
-	return &data, nil
+	scan(&obj, data)
+	return err
 }
 
 // TODO: support for ID field
