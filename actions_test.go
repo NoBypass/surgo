@@ -152,3 +152,85 @@ func TestSelect(t *testing.T) {
 		assert.Equal(t, "SELECT * FROM SampleModel PARALLEL;", testDB.db.(*DBMock).query)
 	})
 }
+
+func TestUpdate(t *testing.T) {
+	sampleModel := &SampleModel{ID: "123", Name: "foo", Age: 20, Bad: false}
+	t.Run("With a model", func(t *testing.T) {
+		err := testDB.Update(sampleModel)
+		assert.NoError(t, err)
+		assert.Equal(t,
+			`UPDATE SampleModel CONTENT {id:"123",name:"foo",age:20,bad:false};`,
+			testDB.db.(*DBMock).query,
+		)
+	})
+	t.Run("With an id", func(t *testing.T) {
+		err := testDB.Update(sampleModel, ID("123"))
+		assert.NoError(t, err)
+		assert.Equal(t,
+			`UPDATE SampleModel:123 CONTENT {id:"123",name:"foo",age:20,bad:false};`,
+			testDB.db.(*DBMock).query,
+		)
+	})
+	t.Run("With a return", func(t *testing.T) {
+		err := testDB.Update(sampleModel, Return(ReturnBefore))
+		assert.NoError(t, err)
+		assert.Equal(t,
+			`UPDATE SampleModel CONTENT {id:"123",name:"foo",age:20,bad:false} RETURN BEFORE;`,
+			testDB.db.(*DBMock).query,
+		)
+	})
+	t.Run("With a timeout", func(t *testing.T) {
+		err := testDB.Update(sampleModel, Timeout(10*time.Second))
+		assert.NoError(t, err)
+		assert.Equal(t,
+			`UPDATE SampleModel CONTENT {id:"123",name:"foo",age:20,bad:false} TIMEOUT 10000ms;`,
+			testDB.db.(*DBMock).query,
+		)
+	})
+	t.Run("With a parallel", func(t *testing.T) {
+		err := testDB.Update(sampleModel, Parallel())
+		assert.NoError(t, err)
+		assert.Equal(t,
+			`UPDATE SampleModel CONTENT {id:"123",name:"foo",age:20,bad:false} PARALLEL;`,
+			testDB.db.(*DBMock).query,
+		)
+	})
+}
+
+func TestDelete(t *testing.T) {
+	t.Run("With a minimal delete query", func(t *testing.T) {
+		_, err := testDB.Delete("123")
+		assert.NoError(t, err)
+		assert.Equal(t, "DELETE SampleModel:123;", testDB.db.(*DBMock).query)
+	})
+	t.Run("With an id", func(t *testing.T) {
+		_, err := testDB.Delete("123", ID("123"))
+		assert.NoError(t, err)
+		assert.Equal(t, "DELETE SampleModel:123;", testDB.db.(*DBMock).query)
+	})
+	t.Run("With a return", func(t *testing.T) {
+		_, err := testDB.Delete("123", Return(ReturnBefore))
+		assert.NoError(t, err)
+		assert.Equal(t, "DELETE SampleModel:123 RETURN BEFORE;", testDB.db.(*DBMock).query)
+	})
+	t.Run("With a timeout", func(t *testing.T) {
+		_, err := testDB.Delete("123", Timeout(10*time.Second))
+		assert.NoError(t, err)
+		assert.Equal(t, "DELETE SampleModel:123 TIMEOUT 10000ms;", testDB.db.(*DBMock).query)
+	})
+	t.Run("With a parallel", func(t *testing.T) {
+		_, err := testDB.Delete("123", Parallel())
+		assert.NoError(t, err)
+		assert.Equal(t, "DELETE SampleModel:123 PARALLEL;", testDB.db.(*DBMock).query)
+	})
+	t.Run("With a where", func(t *testing.T) {
+		_, err := testDB.Delete("123", Where(`name = "foo"`))
+		assert.NoError(t, err)
+		assert.Equal(t, `DELETE SampleModel:123 WHERE name = "foo";`, testDB.db.(*DBMock).query)
+	})
+	t.Run("With an only", func(t *testing.T) {
+		_, err := testDB.Delete("123", Only())
+		assert.NoError(t, err)
+		assert.Equal(t, "DELETE ONLY SampleModel:123;", testDB.db.(*DBMock).query)
+	})
+}
