@@ -2,6 +2,7 @@ package surgo
 
 import (
 	"github.com/stretchr/testify/assert"
+	"strings"
 	"testing"
 	"time"
 )
@@ -24,7 +25,7 @@ type DBMock struct {
 }
 
 func (db *DBMock) Query(query string) (interface{}, error) {
-	db.query = query
+	db.query = strings.TrimSpace(query) + ";"
 	return nil, nil
 }
 
