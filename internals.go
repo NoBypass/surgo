@@ -37,11 +37,11 @@ func only(condition bool) string {
 	return ""
 }
 
-func where(condition string) string {
-	if condition == "" {
+func where(condition []string) string {
+	if len(condition) == 0 {
 		return ""
 	}
-	return fmt.Sprintf("WHERE %s ", condition)
+	return fmt.Sprintf("WHERE %s ", strings.Join(condition, " AND "))
 }
 
 func group(fields []string) string {
@@ -143,6 +143,13 @@ func content[T any](content *T) string {
 	contentStr = contentStr[:len(contentStr)-1] + "} "
 
 	return contentStr
+}
+
+func model(normal, override string) string {
+	if override != "" {
+		return override
+	}
+	return normal
 }
 
 func pascaleToSnake(s string) string {
