@@ -120,7 +120,7 @@ func content[T any](content *T) string {
 		if tag == "" {
 			tag = fieldType.Tag.Get("surreal")
 			if tag == "" {
-				tag = fieldType.Name
+				tag = pascaleToSnake(fieldType.Name)
 			}
 		}
 		switch field.Kind() {
