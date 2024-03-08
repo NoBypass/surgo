@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/surrealdb/surrealdb.go"
-	"reflect"
 )
 
 type Option [2]string
@@ -69,7 +68,7 @@ type DBModel[T any] struct {
 func Model[T any](db IDB) DBModel[T] {
 	return DBModel[T]{
 		db:    db,
-		model: reflect.TypeOf(new(T)).Elem().Name(),
+		model: nameOf[T](),
 	}
 }
 
@@ -86,9 +85,9 @@ type DBRelation[From, To, Edge any] struct {
 func Relation[From, To, Edge any](db IDB) DBRelation[From, To, Edge] {
 	return DBRelation[From, To, Edge]{
 		db:   db,
-		from: reflect.TypeOf(new(From)).Elem().Name(),
-		to:   reflect.TypeOf(new(To)).Elem().Name(),
-		edge: reflect.TypeOf(new(Edge)).Elem().Name(),
+		from: nameOf[From](),
+		to:   nameOf[To](),
+		edge: nameOf[Edge](),
 	}
 }
 
