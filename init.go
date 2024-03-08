@@ -73,10 +73,11 @@ func Model[T any](db IDB) DBModel[T] {
 }
 
 type DBRelation[From, To, Edge any] struct {
-	db   IDB
-	from string
-	to   string
-	edge string
+	db    IDB
+	model DBModel[Edge]
+	from  string
+	to    string
+	edge  string
 }
 
 // Relation takes a database connection and two records. It is used to
@@ -84,10 +85,11 @@ type DBRelation[From, To, Edge any] struct {
 // used as the database table names (using reflect).
 func Relation[From, To, Edge any](db IDB) DBRelation[From, To, Edge] {
 	return DBRelation[From, To, Edge]{
-		db:   db,
-		from: nameOf[From](),
-		to:   nameOf[To](),
-		edge: nameOf[Edge](),
+		db:    db,
+		model: Model[Edge](db),
+		from:  nameOf[From](),
+		to:    nameOf[To](),
+		edge:  nameOf[Edge](),
 	}
 }
 

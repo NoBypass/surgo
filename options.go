@@ -16,7 +16,8 @@ type Opts struct {
 	groups      []string
 	fields      []string
 	omit        []string
-	where       string
+	where       []string
+	model       string
 	id          string
 	parallel    bool
 	only        bool
@@ -49,7 +50,7 @@ func Omit(fields ...string) OptsFunc {
 // Where is an option for `Select` to specify the condition to filter the records.
 func Where(condition string) OptsFunc {
 	return func(o *Opts) {
-		o.where = condition
+		o.where = append(o.where, condition)
 	}
 }
 
@@ -174,5 +175,11 @@ func Parallel() OptsFunc {
 func Return(fields ...string) OptsFunc {
 	return func(o *Opts) {
 		o.returns = fields
+	}
+}
+
+func overrideModel(model string) OptsFunc {
+	return func(o *Opts) {
+		o.model = model
 	}
 }

@@ -15,7 +15,7 @@ func (dbm *DBModel[T]) Select(obj *T, options ...OptsFunc) error {
 		fields(opts.fields),
 		omit(opts.omit),
 		only(opts.only),
-		dbm.model,
+		model(dbm.model, opts.model),
 		id(opts.id),
 		where(opts.where),
 		group(opts.groups),
@@ -44,7 +44,7 @@ func (dbm *DBModel[T]) Create(record *T, options ...OptsFunc) error {
 
 	query := fmt.Sprintf("CREATE %s%s%s%s%s%s%s",
 		only(opts.only),
-		dbm.model,
+		model(dbm.model, opts.model),
 		id(opts.id),
 		content(record),
 		returns(opts.returns),
@@ -64,7 +64,7 @@ func (dbm *DBModel[T]) Create(record *T, options ...OptsFunc) error {
 
 // TODO: support for ID field (scan)
 
-func (dbm *DBModel[T]) Delete(ID string, options ...OptsFunc) (*T, error) {
+func (dbm *DBModel[T]) Delete(options ...OptsFunc) (*T, error) {
 	var opts Opts
 	for _, option := range options {
 		option(&opts)
@@ -72,8 +72,8 @@ func (dbm *DBModel[T]) Delete(ID string, options ...OptsFunc) (*T, error) {
 
 	query := fmt.Sprintf("DELETE %s%s%s %s%s%s%s",
 		only(opts.only),
-		dbm.model,
-		id(ID),
+		model(dbm.model, opts.model),
+		id(opts.id),
 		where(opts.where),
 		returns(opts.returns),
 		timeout(opts.timeout),
@@ -98,7 +98,7 @@ func (dbm *DBModel[T]) Update(record *T, options ...OptsFunc) error {
 
 	query := fmt.Sprintf("UPDATE %s%s%s%s%s%s%s",
 		only(opts.only),
-		dbm.model,
+		model(dbm.model, opts.model),
 		id(opts.id),
 		content(record),
 		returns(opts.returns),
@@ -149,30 +149,10 @@ func (dbr *DBRelation[From, To, Edge]) Delete(fromID, toID OptsFunc, options ...
 	fromID(&fromOpts)
 	toID(&toOpts)
 
-	var opts Opts
-	for _, option := range options {
-		option(&opts)
-	}
-
-	whereStr := fmt.Sprintf("out=%s%s%s", dbr.to, id(toOpts.id), func() string {
-		if opts.where == "" {
-			return ""
-		}
-		return " AND " + opts.where
-	}())
-
-	query := fmt.Sprintf("DELETE %s%s%s->%s %s%s%s%s",
-		only(opts.only),
-		dbr.from,
-		id(fromOpts.id),
-		dbr.edge,
-		where(whereStr),
-		returns(opts.returns),
-		timeout(opts.timeout),
-		parallel(opts.parallel),
+	options = append(
+		options,
+		Where(fmt.Sprintf("out=%s%s", dbr.to, id(toOpts.id))),
+		overrideModel(fmt.Sprintf("%s%s->%s", dbr.from, id(fromOpts.id), dbr.edge)),
 	)
-
-	res, err := dbr.db.Query(query)
-	data, err := surrealdb.SmartUnmarshal[Edge](res, err)
-	return &data, err
+	return dbr.model.Delete(options...)
 }
