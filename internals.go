@@ -2,6 +2,7 @@ package surgo
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 )
@@ -105,4 +106,35 @@ func returns(fields []string) string {
 		return ""
 	}
 	return fmt.Sprintf("RETURN %s ", strings.Join(fields, ", "))
+}
+
+func content[T any](content *T) string {
+	contentStr := " CONTENT {"
+	v := reflect.ValueOf(content).Elem()
+	t := v.Type()
+
+	for i := 0; i < v.NumField(); i++ {
+		field := v.Field(i)
+		fieldType := t.Field(i)
+		surrealTag := fieldType.Tag.Get("surreal")
+		if surrealTag == "" {
+			surrealTag = fieldType.Name
+		}
+		switch field.Kind() {
+		case reflect.String:
+			contentStr += fmt.Sprintf(`%s:"%v",`, surrealTag, field.Interface())
+		case reflect.Struct:
+			if field.Type() == reflect.TypeOf(time.Time{}) {
+				contentStr += fmt.Sprintf(`%s:"%v",`, surrealTag, field.Interface().(time.Time).Format(time.RFC3339))
+			} else {
+				contentStr += fmt.Sprintf("%s:%v,", surrealTag, field.Interface())
+			}
+		default:
+			contentStr += fmt.Sprintf("%s:%v,", surrealTag, field.Interface())
+		}
+	}
+
+	contentStr = contentStr[:len(contentStr)-1] + "} "
+
+	return contentStr
 }

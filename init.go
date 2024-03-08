@@ -58,7 +58,7 @@ func New(ctx context.Context, url string, options ...Option) (*DB, error) {
 	}, nil
 }
 
-type DBWrap[T any] struct {
+type DBModel[T any] struct {
 	db    IDB
 	model string
 }
@@ -66,10 +66,29 @@ type DBWrap[T any] struct {
 // Model takes a pointer to a record and a database connection. It is
 // used to provide type safety in queries. The name of the given record
 // is used as the database table name (using reflect).
-func Model[T any](db IDB) DBWrap[T] {
-	return DBWrap[T]{
+func Model[T any](db IDB) DBModel[T] {
+	return DBModel[T]{
 		db:    db,
 		model: reflect.TypeOf(new(T)).Elem().Name(),
+	}
+}
+
+type DBRelation[From, To, Edge any] struct {
+	db   IDB
+	from string
+	to   string
+	edge string
+}
+
+// Relation takes a database connection and two records. It is used to
+// provide type safety in queries. The names of the given records are
+// used as the database table names (using reflect).
+func Relation[From, To, Edge any](db IDB) DBRelation[From, To, Edge] {
+	return DBRelation[From, To, Edge]{
+		db:   db,
+		from: reflect.TypeOf(new(From)).Elem().Name(),
+		to:   reflect.TypeOf(new(To)).Elem().Name(),
+		edge: reflect.TypeOf(new(Edge)).Elem().Name(),
 	}
 }
 
