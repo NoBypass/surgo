@@ -48,7 +48,7 @@ func TestDBModel_Create(t *testing.T) {
 		err := model.Create(sampleModel)
 		assert.NoError(t, err)
 		assert.Equal(t,
-			`CREATE sample_model CONTENT {id:"123",name:"foo",age:20,bad:false};`,
+			`CREATE sample_model CONTENT {name:"foo",age:20,bad:false};`,
 			model.db.(*DBMock).query,
 		)
 	})
@@ -56,7 +56,7 @@ func TestDBModel_Create(t *testing.T) {
 		err := model.Create(sampleModel, ID("123"))
 		assert.NoError(t, err)
 		assert.Equal(t,
-			`CREATE sample_model:123 CONTENT {id:"123",name:"foo",age:20,bad:false};`,
+			`CREATE sample_model:123 CONTENT {name:"foo",age:20,bad:false};`,
 			model.db.(*DBMock).query,
 		)
 	})
@@ -64,7 +64,7 @@ func TestDBModel_Create(t *testing.T) {
 		err := model.Create(sampleModel, Return(ReturnBefore))
 		assert.NoError(t, err)
 		assert.Equal(t,
-			`CREATE sample_model CONTENT {id:"123",name:"foo",age:20,bad:false} RETURN BEFORE;`,
+			`CREATE sample_model CONTENT {name:"foo",age:20,bad:false} RETURN BEFORE;`,
 			model.db.(*DBMock).query,
 		)
 	})
@@ -72,7 +72,7 @@ func TestDBModel_Create(t *testing.T) {
 		err := model.Create(sampleModel, Timeout(10*time.Second))
 		assert.NoError(t, err)
 		assert.Equal(t,
-			`CREATE sample_model CONTENT {id:"123",name:"foo",age:20,bad:false} TIMEOUT 10000ms;`,
+			`CREATE sample_model CONTENT {name:"foo",age:20,bad:false} TIMEOUT 10000ms;`,
 			model.db.(*DBMock).query,
 		)
 	})
@@ -80,7 +80,7 @@ func TestDBModel_Create(t *testing.T) {
 		err := model.Create(sampleModel, Parallel())
 		assert.NoError(t, err)
 		assert.Equal(t,
-			`CREATE sample_model CONTENT {id:"123",name:"foo",age:20,bad:false} PARALLEL;`,
+			`CREATE sample_model CONTENT {name:"foo",age:20,bad:false} PARALLEL;`,
 			model.db.(*DBMock).query,
 		)
 	})
@@ -179,7 +179,7 @@ func TestDBModel_Update(t *testing.T) {
 		err := model.Update(sampleModel)
 		assert.NoError(t, err)
 		assert.Equal(t,
-			`UPDATE sample_model CONTENT {id:"123",name:"foo",age:20,bad:false};`,
+			`UPDATE sample_model CONTENT {name:"foo",age:20,bad:false};`,
 			model.db.(*DBMock).query,
 		)
 	})
@@ -187,7 +187,7 @@ func TestDBModel_Update(t *testing.T) {
 		err := model.Update(sampleModel, ID("123"))
 		assert.NoError(t, err)
 		assert.Equal(t,
-			`UPDATE sample_model:123 CONTENT {id:"123",name:"foo",age:20,bad:false};`,
+			`UPDATE sample_model:123 CONTENT {name:"foo",age:20,bad:false};`,
 			model.db.(*DBMock).query,
 		)
 	})
@@ -195,7 +195,7 @@ func TestDBModel_Update(t *testing.T) {
 		err := model.Update(sampleModel, Return(ReturnBefore))
 		assert.NoError(t, err)
 		assert.Equal(t,
-			`UPDATE sample_model CONTENT {id:"123",name:"foo",age:20,bad:false} RETURN BEFORE;`,
+			`UPDATE sample_model CONTENT {name:"foo",age:20,bad:false} RETURN BEFORE;`,
 			model.db.(*DBMock).query,
 		)
 	})
@@ -203,7 +203,7 @@ func TestDBModel_Update(t *testing.T) {
 		err := model.Update(sampleModel, Timeout(10*time.Second))
 		assert.NoError(t, err)
 		assert.Equal(t,
-			`UPDATE sample_model CONTENT {id:"123",name:"foo",age:20,bad:false} TIMEOUT 10000ms;`,
+			`UPDATE sample_model CONTENT {name:"foo",age:20,bad:false} TIMEOUT 10000ms;`,
 			model.db.(*DBMock).query,
 		)
 	})
@@ -211,7 +211,7 @@ func TestDBModel_Update(t *testing.T) {
 		err := model.Update(sampleModel, Parallel())
 		assert.NoError(t, err)
 		assert.Equal(t,
-			`UPDATE sample_model CONTENT {id:"123",name:"foo",age:20,bad:false} PARALLEL;`,
+			`UPDATE sample_model CONTENT {name:"foo",age:20,bad:false} PARALLEL;`,
 			model.db.(*DBMock).query,
 		)
 	})

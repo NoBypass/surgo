@@ -116,6 +116,9 @@ func content[T any](content *T) string {
 	for i := 0; i < v.NumField(); i++ {
 		field := v.Field(i)
 		fieldType := t.Field(i)
+		if fieldType.Name == "ID" {
+			continue
+		}
 		tag := fieldType.Tag.Get("surreal")
 		if tag == "" {
 			tag = fieldType.Tag.Get("surreal")
