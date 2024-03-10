@@ -86,88 +86,175 @@ func TestDBModel_Create(t *testing.T) {
 	})
 }
 
-func TestDBModel_Select(t *testing.T) {
-	t.Run("With a minimal select query", func(t *testing.T) {
+func TestDBModel_FindOne(t *testing.T) {
+	t.Run("With a minimal find query", func(t *testing.T) {
 		test := SampleModel{}
-		err := testModel.Select(&test)
+		err := testModel.FindOne(&test)
 		assert.NoError(t, err)
-		assert.Equal(t, "SELECT * FROM sample_model;", testModel.db.(*DBMock).query)
+		assert.Equal(t, "SELECT * FROM ONLY sample_model;", testModel.db.(*DBMock).query)
 	})
 	t.Run("With an id", func(t *testing.T) {
 		test := SampleModel{}
-		err := testModel.Select(&test, ID("123"))
+		err := testModel.FindOne(&test, ID("123"))
 		assert.NoError(t, err)
-		assert.Equal(t, "SELECT * FROM sample_model:123;", testModel.db.(*DBMock).query)
+		assert.Equal(t, "SELECT * FROM ONLY sample_model:123;", testModel.db.(*DBMock).query)
 	})
 	t.Run("With a ranged id", func(t *testing.T) {
 		test := SampleModel{}
-		err := testModel.Select(&test, ID([2]any{SampleID{123}, SampleID{456}}))
+		err := testModel.FindOne(&test, ID([2]any{SampleID{123}, SampleID{456}}))
 		assert.NoError(t, err)
-		assert.Equal(t, "SELECT * FROM sample_model:[123]..[456];", testModel.db.(*DBMock).query)
+		assert.Equal(t, "SELECT * FROM ONLY sample_model:[123]..[456];", testModel.db.(*DBMock).query)
 	})
 	t.Run("With fields", func(t *testing.T) {
 		test := SampleModel{}
-		err := testModel.Select(&test, Fields("id", "name"))
+		err := testModel.FindOne(&test, Fields("id", "name"))
 		assert.NoError(t, err)
-		assert.Equal(t, "SELECT id, name FROM sample_model;", testModel.db.(*DBMock).query)
+		assert.Equal(t, "SELECT id, name FROM ONLY sample_model;", testModel.db.(*DBMock).query)
 	})
 	t.Run("With omit", func(t *testing.T) {
 		test := SampleModel{}
-		err := testModel.Select(&test, Omit("id", "name"))
+		err := testModel.FindOne(&test, Omit("id", "name"))
 		assert.NoError(t, err)
-		assert.Equal(t, "SELECT * OMIT id, name FROM sample_model;", testModel.db.(*DBMock).query)
+		assert.Equal(t, "SELECT * OMIT id, name FROM ONLY sample_model;", testModel.db.(*DBMock).query)
 	})
 	t.Run("With only", func(t *testing.T) {
 		test := SampleModel{}
-		err := testModel.Select(&test, Only())
+		err := testModel.FindOne(&test, Only())
 		assert.NoError(t, err)
 		assert.Equal(t, "SELECT * FROM ONLY sample_model;", testModel.db.(*DBMock).query)
 	})
 	t.Run("With where", func(t *testing.T) {
 		test := SampleModel{}
-		err := testModel.Select(&test, Where(`name = "foo"`))
+		err := testModel.FindOne(&test, Where(`name = "foo"`))
+		assert.NoError(t, err)
+		assert.Equal(t, `SELECT * FROM ONLY sample_model WHERE name = "foo";`, testModel.db.(*DBMock).query)
+	})
+	t.Run("With group by", func(t *testing.T) {
+		test := SampleModel{}
+		err := testModel.FindOne(&test, GroupBy("name", "age"))
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT * FROM ONLY sample_model GROUP BY name, age;", testModel.db.(*DBMock).query)
+	})
+	t.Run("With order by", func(t *testing.T) {
+		test := SampleModel{}
+		err := testModel.FindOne(&test, OrderBy(Asc("name"), Desc("age")))
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT * FROM ONLY sample_model ORDER BY name ASC, age DESC;", testModel.db.(*DBMock).query)
+	})
+	t.Run("With limit", func(t *testing.T) {
+		test := SampleModel{}
+		err := testModel.FindOne(&test, Limit(10))
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT * FROM ONLY sample_model LIMIT 10;", testModel.db.(*DBMock).query)
+	})
+	t.Run("With start", func(t *testing.T) {
+		test := SampleModel{}
+		err := testModel.FindOne(&test, Start(10))
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT * FROM ONLY sample_model START 10;", testModel.db.(*DBMock).query)
+	})
+	t.Run("With fetch", func(t *testing.T) {
+		test := SampleModel{}
+		err := testModel.FindOne(&test, Fetch("group.sub"))
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT * FROM ONLY sample_model FETCH group.sub;", testModel.db.(*DBMock).query)
+	})
+	t.Run("With timeout", func(t *testing.T) {
+		test := SampleModel{}
+		err := testModel.FindOne(&test, Timeout(10*time.Second))
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT * FROM ONLY sample_model TIMEOUT 10000ms;", testModel.db.(*DBMock).query)
+	})
+	t.Run("With parallel", func(t *testing.T) {
+		test := SampleModel{}
+		err := testModel.FindOne(&test, Parallel())
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT * FROM ONLY sample_model PARALLEL;", testModel.db.(*DBMock).query)
+	})
+}
+
+func TestDBModel_Find(t *testing.T) {
+	t.Run("With a minimal find query", func(t *testing.T) {
+		var test []SampleModel
+		err := testModel.Find(&test)
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT * FROM sample_model;", testModel.db.(*DBMock).query)
+	})
+	t.Run("With an id", func(t *testing.T) {
+		var test []SampleModel
+		err := testModel.Find(&test, ID("123"))
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT * FROM sample_model:123;", testModel.db.(*DBMock).query)
+	})
+	t.Run("With a ranged id", func(t *testing.T) {
+		var test []SampleModel
+		err := testModel.Find(&test, ID([2]any{SampleID{123}, SampleID{456}}))
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT * FROM sample_model:[123]..[456];", testModel.db.(*DBMock).query)
+	})
+	t.Run("With fields", func(t *testing.T) {
+		var test []SampleModel
+		err := testModel.Find(&test, Fields("id", "name"))
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT id, name FROM sample_model;", testModel.db.(*DBMock).query)
+	})
+	t.Run("With omit", func(t *testing.T) {
+		var test []SampleModel
+		err := testModel.Find(&test, Omit("id", "name"))
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT * OMIT id, name FROM sample_model;", testModel.db.(*DBMock).query)
+	})
+	t.Run("With only", func(t *testing.T) {
+		var test []SampleModel
+		err := testModel.Find(&test, Only())
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT * FROM ONLY sample_model;", testModel.db.(*DBMock).query)
+	})
+	t.Run("With where", func(t *testing.T) {
+		var test []SampleModel
+		err := testModel.Find(&test, Where(`name = "foo"`))
 		assert.NoError(t, err)
 		assert.Equal(t, `SELECT * FROM sample_model WHERE name = "foo";`, testModel.db.(*DBMock).query)
 	})
 	t.Run("With group by", func(t *testing.T) {
-		test := SampleModel{}
-		err := testModel.Select(&test, GroupBy("name", "age"))
+		var test []SampleModel
+		err := testModel.Find(&test, GroupBy("name", "age"))
 		assert.NoError(t, err)
 		assert.Equal(t, "SELECT * FROM sample_model GROUP BY name, age;", testModel.db.(*DBMock).query)
 	})
 	t.Run("With order by", func(t *testing.T) {
-		test := SampleModel{}
-		err := testModel.Select(&test, OrderBy(Asc("name"), Desc("age")))
+		var test []SampleModel
+		err := testModel.Find(&test, OrderBy(Asc("name"), Desc("age")))
 		assert.NoError(t, err)
 		assert.Equal(t, "SELECT * FROM sample_model ORDER BY name ASC, age DESC;", testModel.db.(*DBMock).query)
 	})
 	t.Run("With limit", func(t *testing.T) {
-		test := SampleModel{}
-		err := testModel.Select(&test, Limit(10))
+		var test []SampleModel
+		err := testModel.Find(&test, Limit(10))
 		assert.NoError(t, err)
 		assert.Equal(t, "SELECT * FROM sample_model LIMIT 10;", testModel.db.(*DBMock).query)
 	})
 	t.Run("With start", func(t *testing.T) {
-		test := SampleModel{}
-		err := testModel.Select(&test, Start(10))
+		var test []SampleModel
+		err := testModel.Find(&test, Start(10))
 		assert.NoError(t, err)
 		assert.Equal(t, "SELECT * FROM sample_model START 10;", testModel.db.(*DBMock).query)
 	})
 	t.Run("With fetch", func(t *testing.T) {
-		test := SampleModel{}
-		err := testModel.Select(&test, Fetch("group.sub"))
+		var test []SampleModel
+		err := testModel.Find(&test, Fetch("group.sub"))
 		assert.NoError(t, err)
 		assert.Equal(t, "SELECT * FROM sample_model FETCH group.sub;", testModel.db.(*DBMock).query)
 	})
 	t.Run("With timeout", func(t *testing.T) {
-		test := SampleModel{}
-		err := testModel.Select(&test, Timeout(10*time.Second))
+		var test []SampleModel
+		err := testModel.Find(&test, Timeout(10*time.Second))
 		assert.NoError(t, err)
 		assert.Equal(t, "SELECT * FROM sample_model TIMEOUT 10000ms;", testModel.db.(*DBMock).query)
 	})
 	t.Run("With parallel", func(t *testing.T) {
-		test := SampleModel{}
-		err := testModel.Select(&test, Parallel())
+		var test []SampleModel
+		err := testModel.Find(&test, Parallel())
 		assert.NoError(t, err)
 		assert.Equal(t, "SELECT * FROM sample_model PARALLEL;", testModel.db.(*DBMock).query)
 	})

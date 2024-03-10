@@ -12,8 +12,13 @@ func (db *DB) Query(query string) (interface{}, error) {
 	return db.db.Query(query, nil)
 }
 
-func scan[T any](scan **T, content T) {
+func scanStruct[T any](scan **T, content T) {
 	*scan = &content
+}
+
+func scanSlice[T any](scan *[]T, content []T) {
+	*scan = make([]T, len(content))
+	copy(*scan, content)
 }
 
 func fields(fields []string) string {

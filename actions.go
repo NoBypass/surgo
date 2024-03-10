@@ -5,7 +5,20 @@ import (
 	"github.com/surrealdb/surrealdb.go"
 )
 
-func (dbm *DBModel[T]) Select(obj *T, options ...OptsFunc) error {
+func (dbm *DBModel[T]) FindOne(obj *T, options ...OptsFunc) error {
+	options = append(options, Only())
+	data, err := surrealdb.SmartUnmarshal[T](dbm.selectConstructor(options...))
+	scanStruct(&obj, data)
+	return err
+}
+
+func (dbm *DBModel[T]) Find(obj *[]T, options ...OptsFunc) error {
+	data, err := surrealdb.SmartUnmarshal[[]T](dbm.selectConstructor(options...))
+	scanSlice(obj, data)
+	return err
+}
+
+func (dbm *DBModel[T]) selectConstructor(options ...OptsFunc) (any, error) {
 	var opts Opts
 	for _, option := range options {
 		option(&opts)
@@ -27,10 +40,7 @@ func (dbm *DBModel[T]) Select(obj *T, options ...OptsFunc) error {
 		parallel(opts.parallel),
 	)
 
-	res, err := dbm.db.Query(query)
-	data, err := surrealdb.SmartUnmarshal[T](res, err)
-	scan(&obj, data)
-	return err
+	return dbm.db.Query(query)
 }
 
 // TODO: support for ID field
@@ -58,7 +68,7 @@ func (dbm *DBModel[T]) Create(record *T, options ...OptsFunc) error {
 		return err
 	}
 
-	scan(&record, data)
+	scanStruct(&record, data)
 	return nil
 }
 
