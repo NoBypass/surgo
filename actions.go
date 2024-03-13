@@ -153,6 +153,8 @@ func (dbr *DBRelation[From, To, Edge]) Create(edge *Edge, fromID, toID OptsFunc,
 	return err
 }
 
+// TODO: use scan
+
 func (dbr *DBRelation[From, To, Edge]) Delete(fromID, toID OptsFunc, options ...OptsFunc) (*Edge, error) {
 	var fromOpts Opts
 	var toOpts Opts

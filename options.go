@@ -137,9 +137,10 @@ type SliceOrString[T any] interface {
 // (The `Bar` type is just an example, you can use any type you want. It is
 // strongly recommended to use a struct for this purpose, so you can make
 // use of type safety.)
-func ID[T ~string | ~[2]any](id T) OptsFunc {
+func ID[T ~string | ~[2]any | ~[]string](id T) OptsFunc {
 	idStrs := make([]string, 0, 2)
-	if reflect.TypeOf(id).Kind() == reflect.Array {
+	idType := reflect.TypeOf(id).Kind()
+	if idType == reflect.Array {
 		for _, v := range reflect.ValueOf(id).Interface().([2]interface{}) {
 			t := reflect.ValueOf(v)
 			fields := t.NumField()
@@ -156,6 +157,9 @@ func ID[T ~string | ~[2]any](id T) OptsFunc {
 			}
 			idStrs = append(idStrs, curr+"]")
 		}
+	} else if idType == reflect.Slice {
+		slice := reflect.ValueOf(id).Interface().([]string)
+		idStrs = append(idStrs, fmt.Sprintf("[%s]", strings.Join(slice, ", ")))
 	} else {
 		idStrs = append(idStrs, fmt.Sprintf("%s", id))
 	}
