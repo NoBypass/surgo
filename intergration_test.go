@@ -19,7 +19,7 @@ func TestIntegration(t *testing.T) {
 		Namespace("test"),
 	)
 	if err != nil {
-		return
+		t.Skip("SurrealDB not available")
 	}
 	defer db.Close()
 
