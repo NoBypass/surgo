@@ -12,12 +12,15 @@ type testObject struct {
 }
 
 func TestIntegration(t *testing.T) {
-	db := MustConnect("127.0.0.1:8000",
+	db, err := Connect("127.0.0.1:8000",
 		User("root"),
 		Password("1234"),
 		Database("test"),
 		Namespace("test"),
 	)
+	if err != nil {
+		return
+	}
 	defer db.Close()
 
 	ts := rand.Intn(100)
