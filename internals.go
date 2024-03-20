@@ -4,170 +4,122 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
 )
 
-func (db *DB) Query(query string) (interface{}, error) {
-	query = strings.TrimSpace(query) + ";"
-	return db.db.Query(query, nil)
-}
-
-func scanStruct[T any](scan **T, content T) {
-	*scan = &content
-}
-
-func scanSlice[T any](scan *[]T, content []T) {
-	*scan = make([]T, len(content))
-	copy(*scan, content)
-}
-
-func fields(fields []string) string {
-	if len(fields) == 0 {
-		return "*"
+func (db *DB) parseParams(args any) (map[string]any, error) {
+	kind := reflect.ValueOf(args).Kind()
+	switch kind {
+	case reflect.Slice:
+		return sliceToMap(args), nil
+	case reflect.Array:
+		return sliceToMap(args), nil
+	case reflect.Map:
+		return args.(map[string]any), nil
+	case reflect.Struct:
+		return structToMap(args), nil
+	default:
+		return nil, fmt.Errorf("unsupported type: %v", kind.String())
 	}
-	return strings.Join(fields, ", ")
 }
 
-func omit(fields []string) string {
-	if len(fields) == 0 {
-		return ""
+func sliceToMap(slice any) map[string]any {
+	v := reflect.ValueOf(slice)
+	m := make(map[string]any, v.Len())
+	for i := 0; i < v.Len(); i++ {
+		m[fmt.Sprintf("%d", i+1)] = v.Index(i).Interface()
 	}
-	return fmt.Sprintf(" OMIT %s", strings.Join(fields, ", "))
+
+	return m
 }
 
-func only(condition bool) string {
-	if condition {
-		return "ONLY "
-	}
-	return ""
-}
-
-func where(condition []string) string {
-	if len(condition) == 0 {
-		return ""
-	}
-	return fmt.Sprintf("WHERE %s ", strings.Join(condition, " AND "))
-}
-
-func group(fields []string) string {
-	if len(fields) == 0 {
-		return ""
-	}
-	return fmt.Sprintf("GROUP BY %s ", strings.Join(fields, ", "))
-}
-
-func order(fields []string) string {
-	if len(fields) == 0 {
-		return ""
-	}
-	return fmt.Sprintf("ORDER BY %s ", strings.Join(fields, ", "))
-}
-
-func limit(limit int) string {
-	if limit == 0 {
-		return ""
-	}
-	return fmt.Sprintf("LIMIT %d ", limit)
-}
-
-func start(start int) string {
-	if start == 0 {
-		return ""
-	}
-	return fmt.Sprintf("START %d ", start)
-}
-
-func fetch(fields []string) string {
-	if len(fields) == 0 {
-		return ""
-	}
-	return fmt.Sprintf("FETCH %s ", strings.Join(fields, ", "))
-}
-
-func timeout(d time.Duration) string {
-	if d == 0 {
-		return ""
-	}
-	// TODO: parse duration to ideal measurement
-	return fmt.Sprintf("TIMEOUT %dms ", d.Milliseconds())
-}
-
-func id(ID string) string {
-	if ID == "" {
-		return ""
-	}
-	return fmt.Sprintf(":%s", ID)
-}
-
-func parallel(condition bool) string {
-	if condition {
-		return "PARALLEL"
-	}
-	return ""
-}
-
-func returns(fields []string) string {
-	if len(fields) == 0 {
-		return ""
-	}
-	return fmt.Sprintf("RETURN %s ", strings.Join(fields, ", "))
-}
-
-func content[T any](content *T) string {
-	contentStr := " CONTENT {"
-	v := reflect.ValueOf(content).Elem()
-	t := v.Type()
-
-	for i := 0; i < v.NumField(); i++ {
-		field := v.Field(i)
-		fieldType := t.Field(i)
-		if fieldType.Name == "ID" {
-			continue
+func structToMap[T any](content T) map[string]any {
+	t := reflect.TypeOf(content)
+	nFields := t.NumField()
+	m := make(map[string]any, nFields)
+	for i := range nFields {
+		field := t.Field(i)
+		name := field.Name
+		if tag, ok := field.Tag.Lookup("db"); ok {
+			name = tag
 		}
-		tag := fieldType.Tag.Get("surreal")
-		if tag == "" {
-			tag = fieldType.Tag.Get("surreal")
-			if tag == "" {
-				tag = pascaleToSnake(fieldType.Name)
+
+		m[name] = reflect.ValueOf(content).Field(i).Interface()
+	}
+
+	return m
+}
+
+func scanData(scan any, res Result) error {
+	v := reflect.ValueOf(scan)
+	if v.Kind() != reflect.Ptr {
+		return fmt.Errorf("scan must be a pointer")
+	}
+
+	data, ok := res.Data.([]any)
+	if !ok {
+		data, ok := res.Data.(any)
+		if !ok {
+			return fmt.Errorf("unexpected type %T", res.Data)
+		}
+		if v.Elem().Kind() == reflect.Slice {
+			slice := reflect.MakeSlice(v.Elem().Type(), 1, 1)
+			err := fillData(slice.Index(0).Addr().Interface(), data)
+			if err != nil {
+				return err
+			}
+			v.Elem().Set(slice)
+			return nil
+		} else {
+			return fillData(scan, data)
+		}
+	}
+
+	if v.Elem().Kind() == reflect.Slice {
+		slice := reflect.MakeSlice(v.Elem().Type(), len(data), len(data))
+		for i, d := range data {
+			err := fillData(slice.Index(i).Addr().Interface(), d)
+			if err != nil {
+				return err
 			}
 		}
-		switch field.Kind() {
-		case reflect.String:
-			contentStr += fmt.Sprintf(`%s:"%v",`, tag, field.Interface())
-		case reflect.Struct:
-			if field.Type() == reflect.TypeOf(time.Time{}) {
-				contentStr += fmt.Sprintf(`%s:"%v",`, tag, field.Interface().(time.Time).Format(time.RFC3339))
-			} else {
-				contentStr += fmt.Sprintf("%s:%v,", tag, field.Interface())
+		v.Elem().Set(slice)
+	} else {
+		return fillData(scan, data[0])
+	}
+
+	return nil
+}
+
+func fillData(scan any, data any) error {
+	m, ok := data.(map[string]any)
+	if !ok {
+		return fmt.Errorf("expected map, got %T", data)
+	}
+
+	if len(m) == 1 {
+		for _, v := range m {
+			setVal(reflect.ValueOf(scan).Elem(), reflect.ValueOf(v))
+			return nil
+		}
+	}
+
+	t := reflect.TypeOf(scan).Elem()
+	for k, v := range m {
+		for i := 0; i < t.NumField(); i++ {
+			field := t.Field(i)
+			if field.Tag.Get("db") == k || field.Name == k || strings.ToLower(field.Name) == k {
+				setVal(reflect.ValueOf(scan).Elem().Field(i), reflect.ValueOf(v))
 			}
-		default:
-			contentStr += fmt.Sprintf("%s:%v,", tag, field.Interface())
 		}
 	}
 
-	contentStr = contentStr[:len(contentStr)-1] + "} "
-
-	return contentStr
+	return nil
 }
 
-func model(normal, override string) string {
-	if override != "" {
-		return override
+func setVal(dest, src reflect.Value) {
+	if dest.Kind() == reflect.Int && src.Kind() == reflect.Float64 {
+		dest.SetInt(int64(src.Float()))
+	} else {
+		dest.Set(src)
 	}
-	return normal
-}
-
-func pascaleToSnake(s string) string {
-	var result string
-	for i, r := range s {
-		if i > 0 && 'A' <= r && r <= 'Z' {
-			result += "_"
-		}
-		result += string(r)
-	}
-	return strings.ToLower(result)
-}
-
-func nameOf[T any]() string {
-	return pascaleToSnake(reflect.TypeOf(new(T)).Elem().Name())
 }

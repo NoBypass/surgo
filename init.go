@@ -1,7 +1,6 @@
 package surgo
 
 import (
-	"context"
 	"fmt"
 	"github.com/surrealdb/surrealdb.go"
 )
@@ -9,18 +8,11 @@ import (
 type Option [2]string
 
 type DB struct {
-	db  *surrealdb.DB
-	ctx context.Context
+	db *surrealdb.DB
 }
 
-type IDB interface {
-	Query(string) (interface{}, error)
-}
-
-// New creates a new database connection and returns a DB object.
-// You can use the `User`, `Pass`, `Namespace`, and `Database` options
-// to set the username, password, namespace, and database name.
-func New(ctx context.Context, url string, options ...Option) (*DB, error) {
+// Connect connects to a SurrealDB instance and returns a DB object.
+func Connect(url string, options ...Option) (*DB, error) {
 	db, err := surrealdb.New(fmt.Sprintf("wss://%s/rpc", url))
 	if err != nil {
 		db, err = surrealdb.New(fmt.Sprintf("ws://%s/rpc", url))
@@ -52,52 +44,29 @@ func New(ctx context.Context, url string, options ...Option) (*DB, error) {
 	}
 
 	return &DB{
-		db:  db,
-		ctx: ctx,
+		db: db,
 	}, nil
 }
 
-type DBModel[T any] struct {
-	db    IDB
-	model string
-}
-
-// Model takes a pointer to a record and a database connection. It is
-// used to provide type safety in queries. The name of the given record
-// is used as the database table name (using reflect).
-func Model[T any](db IDB) DBModel[T] {
-	return DBModel[T]{
-		db:    db,
-		model: nameOf[T](),
+// MustConnect connects to a SurrealDB instance and returns a DB object.
+// If an error occurs, it panics.
+func MustConnect(url string, options ...Option) *DB {
+	db, err := Connect(url, options...)
+	if err != nil {
+		panic(err)
 	}
+	return db
 }
 
-type DBRelation[From, To, Edge any] struct {
-	db    IDB
-	model DBModel[Edge]
-	from  string
-	to    string
-	edge  string
-}
-
-// Relation takes a database connection and two records. It is used to
-// provide type safety in queries. The names of the given records are
-// used as the database table names (using reflect).
-func Relation[From, To, Edge any](db IDB) DBRelation[From, To, Edge] {
-	return DBRelation[From, To, Edge]{
-		db:    db,
-		model: Model[Edge](db),
-		from:  nameOf[From](),
-		to:    nameOf[To](),
-		edge:  nameOf[Edge](),
-	}
+func (db *DB) Close() {
+	db.db.Close()
 }
 
 func User(username string) Option {
 	return Option{"user", username}
 }
 
-func Pass(password string) Option {
+func Password(password string) Option {
 	return Option{"pass", password}
 }
 

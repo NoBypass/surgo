@@ -2,169 +2,114 @@ package surgo
 
 import (
 	"fmt"
-	"github.com/surrealdb/surrealdb.go"
+	"reflect"
+	"strings"
+	"time"
 )
 
-func (dbm *DBModel[T]) FindOne(obj *T, options ...OptsFunc) error {
-	options = append(options, Only())
-	data, err := surrealdb.SmartUnmarshal[T](dbm.selectConstructor(options...))
-	scanStruct(&obj, data)
-	return err
+type Result struct {
+	Data     any
+	Error    error
+	Duration time.Duration
 }
 
-func (dbm *DBModel[T]) Find(obj *[]T, options ...OptsFunc) error {
-	data, err := surrealdb.SmartUnmarshal[[]T](dbm.selectConstructor(options...))
-	scanSlice(obj, data)
-	return err
-}
-
-func (dbm *DBModel[T]) selectConstructor(options ...OptsFunc) (any, error) {
-	var opts Opts
-	for _, option := range options {
-		option(&opts)
+// Scan executes the query and scans the result into the given pointer struct or into a map.
+// If multiple results are expected, a pointer to a slice of structs or maps can be passed.
+// NOTE: Only the last result is scanned into the given object. The same parameter syntax
+// as in `Exec` is supported. For Example:
+//
+//	db.Exec("SELECT * FROM table WHERE id = $id", map[string]any{"id": 1})
+//
+// or
+//
+//	db.Exec("SELECT * FROM table WHERE id = $1", 1)
+func (db *DB) Scan(scan any, query string, args ...any) error {
+	v := reflect.ValueOf(scan)
+	if v.Kind() != reflect.Ptr {
+		return fmt.Errorf("scan must be a pointer")
 	}
 
-	query := fmt.Sprintf("SELECT %s%s FROM %s%s%s %s%s%s%s%s%s%s%s",
-		fields(opts.fields),
-		omit(opts.omit),
-		only(opts.only),
-		model(dbm.model, opts.model),
-		id(opts.id),
-		where(opts.where),
-		group(opts.groups),
-		order(opts.order),
-		limit(opts.limit),
-		start(opts.start),
-		fetch(opts.fetchFields),
-		timeout(opts.timeout),
-		parallel(opts.parallel),
-	)
-
-	return dbm.db.Query(query)
-}
-
-// TODO: support for ID field
-// TODO: support for slices of records
-
-func (dbm *DBModel[T]) Create(record *T, options ...OptsFunc) error {
-	var opts Opts
-	for _, option := range options {
-		option(&opts)
-	}
-
-	query := fmt.Sprintf("CREATE %s%s%s%s%s%s%s",
-		only(opts.only),
-		model(dbm.model, opts.model),
-		id(opts.id),
-		content(record),
-		returns(opts.returns),
-		timeout(opts.timeout),
-		parallel(opts.parallel),
-	)
-
-	res, err := dbm.db.Query(query)
-	data, err := surrealdb.SmartUnmarshal[T](res, err)
+	res, err := db.Exec(query, args...)
 	if err != nil {
 		return err
 	}
 
-	scanStruct(&record, data)
-	return nil
-}
-
-// TODO: support for ID field (scan)
-
-func (dbm *DBModel[T]) Delete(options ...OptsFunc) (*T, error) {
-	var opts Opts
-	for _, option := range options {
-		option(&opts)
+	last := res[len(res)-1]
+	if last.Error != nil {
+		return last.Error
 	}
 
-	query := fmt.Sprintf("DELETE %s%s%s %s%s%s%s",
-		only(opts.only),
-		model(dbm.model, opts.model),
-		id(opts.id),
-		where(opts.where),
-		returns(opts.returns),
-		timeout(opts.timeout),
-		parallel(opts.parallel),
-	)
+	return scanData(scan, last)
+}
 
-	res, err := dbm.db.Query(query)
-	data, err := surrealdb.SmartUnmarshal[T](res, err)
+// Exec executes the query and returns the result. Parameters are supported as
+// a map or simply multiple arguments. For Example:
+//
+//	db.Exec("SELECT * FROM table WHERE id = $id", map[string]any{"id": 1})
+//
+// or
+//
+//	db.Exec("SELECT * FROM table WHERE id = $1", 1)
+func (db *DB) Exec(query string, args ...any) ([]Result, error) {
+	params, err := db.parseParams(args)
 	if err != nil {
 		return nil, err
 	}
-	return &data, nil
+	return db.query(query, params)
 }
 
-// TODO support for set and merge
-
-func (dbm *DBModel[T]) Update(record *T, options ...OptsFunc) error {
-	var opts Opts
-	for _, option := range options {
-		option(&opts)
+// MustExec executes the query and panics if an error occurs at any point.
+// Parameters are supported as a map or simply multiple arguments. For Example:
+//
+//	db.MustExec("SELECT * FROM table WHERE id = $id", map[string]any{"id": 1})
+//
+// or
+//
+//	db.MustExec("SELECT * FROM table WHERE id = $1", 1)
+func (db *DB) MustExec(query string, args ...any) {
+	res, err := db.Exec(query, args...)
+	if err != nil {
+		panic(err)
+	} else if len(res) == 0 {
+		panic("no results")
+	} else {
+		for _, r := range res {
+			if r.Error != nil {
+				panic(r.Error)
+			}
+		}
 	}
-
-	query := fmt.Sprintf("UPDATE %s%s%s%s%s%s%s",
-		only(opts.only),
-		model(dbm.model, opts.model),
-		id(opts.id),
-		content(record),
-		returns(opts.returns),
-		timeout(opts.timeout),
-		parallel(opts.parallel),
-	)
-
-	_, err := dbm.db.Query(query)
-	return err
 }
 
-func (dbr *DBRelation[From, To, Edge]) Create(edge *Edge, fromID, toID OptsFunc, options ...OptsFunc) error {
-	var fromOpts Opts
-	var toOpts Opts
-	fromID(&fromOpts)
-	toID(&toOpts)
-
-	var opts Opts
-	for _, option := range options {
-		option(&opts)
+func (db *DB) query(query string, params map[string]any) ([]Result, error) {
+	if !strings.HasSuffix(query, ";") {
+		query = query + ";"
+	}
+	resp, err := db.db.Query(query, params)
+	if err != nil {
+		return nil, err
 	}
 
-	contentStr := ""
-	if edge != nil {
-		contentStr = content(edge)
+	respSlice := resp.([]any)
+	resSlice := make([]Result, len(respSlice))
+	for i, s := range respSlice {
+		m := s.(map[string]any)
+		d, err := time.ParseDuration(m["time"].(string))
+		if err != nil {
+			return nil, err
+		}
+
+		resSlice[i] = Result{
+			Data: m["result"],
+			Error: func() error {
+				e, ok := m["error"]
+				if m["result"] == nil || !ok {
+					return nil
+				}
+				return fmt.Errorf(e.(string))
+			}(),
+			Duration: d,
+		}
 	}
-
-	query := fmt.Sprintf("RELATE %s%s%s->%s->%s%s%s %s%s%s",
-		only(opts.only),
-		dbr.from,
-		id(fromOpts.id),
-		dbr.edge,
-		dbr.to,
-		id(toOpts.id),
-		contentStr,
-		returns(opts.returns),
-		timeout(opts.timeout),
-		parallel(opts.parallel),
-	)
-
-	_, err := dbr.db.Query(query)
-	return err
-}
-
-// TODO: use scan
-
-func (dbr *DBRelation[From, To, Edge]) Delete(fromID, toID OptsFunc, options ...OptsFunc) (*Edge, error) {
-	var fromOpts Opts
-	var toOpts Opts
-	fromID(&fromOpts)
-	toID(&toOpts)
-
-	options = append(
-		options,
-		Where(fmt.Sprintf("out=%s%s", dbr.to, id(toOpts.id))),
-		overrideModel(fmt.Sprintf("%s%s->%s", dbr.from, id(fromOpts.id), dbr.edge)),
-	)
-	return dbr.model.Delete(options...)
+	return resSlice, nil
 }
