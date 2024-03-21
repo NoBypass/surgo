@@ -120,7 +120,7 @@ type User struct {
     Name string
     Age  int
 }
-result, err := db.Exec("INSERT INTO users (name, age) VALUES ($1, $2)", User{
+result, err := db.Exec("INSERT INTO users (name, age) VALUES ($name, $age)", User{
 	Name: "John",
     Age:  25,
 })
