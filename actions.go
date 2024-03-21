@@ -15,14 +15,7 @@ type Result struct {
 
 // Scan executes the query and scans the result into the given pointer struct or into a map.
 // If multiple results are expected, a pointer to a slice of structs or maps can be passed.
-// NOTE: Only the last result is scanned into the given object. The same parameter syntax
-// as in `Exec` is supported. For Example:
-//
-//	db.Exec("SELECT * FROM table WHERE id = $id", map[string]any{"id": 1})
-//
-// or
-//
-//	db.Exec("SELECT * FROM table WHERE id = $1", 1)
+// NOTE: Only the last result is scanned into the given object.
 func (db *DB) Scan(scan any, query string, args ...any) error {
 	v := reflect.ValueOf(scan)
 	if v.Kind() != reflect.Ptr {
