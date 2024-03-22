@@ -4,32 +4,90 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 )
 
-func (db *DB) parseParams(args any) (map[string]any, error) {
-	kind := reflect.ValueOf(args).Kind()
-	switch kind {
-	case reflect.Slice:
-		return sliceToMap(args), nil
-	case reflect.Array:
-		return sliceToMap(args), nil
-	case reflect.Map:
-		return args.(map[string]any), nil
-	case reflect.Struct:
-		return structToMap(args), nil
-	default:
-		return nil, fmt.Errorf("unsupported type: %v", kind.String())
+func (db *DB) query(query string, params map[string]any) ([]Result, error) {
+	if !strings.HasSuffix(query, ";") {
+		query = query + ";"
 	}
+	resp, err := db.db.Query(query, params)
+	if err != nil {
+		return nil, err
+	}
+
+	respSlice := resp.([]any)
+	resSlice := make([]Result, len(respSlice))
+	for i, s := range respSlice {
+		m := s.(map[string]any)
+		d, err := time.ParseDuration(m["time"].(string))
+		if err != nil {
+			return nil, err
+		}
+
+		if m["status"] == "ERR" {
+			resSlice[i] = Result{
+				Data:  nil,
+				Error: fmt.Errorf(m["result"].(string)),
+			}
+		} else {
+			resSlice[i] = Result{
+				Data:  m["result"],
+				Error: nil,
+			}
+		}
+
+		resSlice[i].Duration = d
+		resSlice[i].Query = Query{
+			query, params,
+		}
+	}
+	return resSlice, nil
 }
 
-func sliceToMap(slice any) map[string]any {
-	v := reflect.ValueOf(slice)
-	m := make(map[string]any, v.Len())
-	for i := 0; i < v.Len(); i++ {
-		m[fmt.Sprintf("%d", i+1)] = v.Index(i).Interface()
+func parseParams(args []any) (map[string]any, error) {
+	if len(args) == 0 {
+		return nil, nil
+	} else if len(args) == 1 {
+		return parseParam(args[0], 0)
 	}
 
-	return m
+	m := make(map[string]any)
+	for i, a := range args {
+		nm, err := parseParam(a, i)
+		if err != nil {
+			return nil, err
+		}
+		for k, v := range nm {
+			m[k] = v
+		}
+	}
+
+	return m, nil
+}
+
+func parseParam(arg any, idx int) (map[string]any, error) {
+	m := make(map[string]any, 1)
+
+	switch arg.(type) {
+	case ID:
+		m["$"] = arg
+		return m, nil
+	case Range:
+		m["$"] = arg
+		return m, nil
+	}
+
+	v := reflect.ValueOf(arg)
+	switch v.Kind() {
+	case reflect.Map:
+		return arg.(map[string]any), nil
+	case reflect.Struct:
+		return structToMap(arg), nil
+	default:
+		m[fmt.Sprintf("%d", idx+1)] = v.Interface()
+		return m, nil
+	}
 }
 
 func structToMap[T any](content T) map[string]any {
@@ -122,4 +180,23 @@ func setVal(dest, src reflect.Value) {
 	} else {
 		dest.Set(src)
 	}
+}
+
+func (id ID) string() string {
+	s := make([]string, 0, 2)
+	for _, v := range id {
+		if v == nil {
+			continue
+		}
+		s = append(s, fmt.Sprintf("%v", v))
+	}
+	str := strings.Join(s, ", ")
+	if len(s) == 1 {
+		return str
+	}
+	return fmt.Sprintf("[%s]", str)
+}
+
+func (r Range) string() string {
+	return fmt.Sprintf("%s..%s", r[0].string(), r[1].string())
 }

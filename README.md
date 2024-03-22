@@ -138,3 +138,8 @@ result := db.MustExec("DEFINE TABLE users")
 ## Contributing
 
 Just make a pull request, and it will be reviewed as soon as possible.
+
+## To-Do
+
+- [ ] Optimize parameter parsing
+- [ ] Document IDs and Ranged IDs

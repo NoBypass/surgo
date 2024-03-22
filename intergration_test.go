@@ -29,17 +29,31 @@ func TestIntegration(t *testing.T) {
 	name2 := string(rune(rand.Intn(100)))
 	db.MustExec(`
 REMOVE TABLE test;
+REMOVE TABLE other;
 DEFINE TABLE test;
+DEFINE TABLE other;
 DEFINE FIELD time_since ON TABLE test TYPE int;
 DEFINE FIELD name       ON TABLE test TYPE string;
 INSERT INTO test (time_since, name) VALUES ($1, $2);
 INSERT INTO test (time_since, name) VALUES ($3, $4);
+CREATE other:123;
+CREATE other:456;
 SELECT * FROM test;
 `, ts, name, ts2, name2)
 
+	t.Run("With id", func(t *testing.T) {
+		var obj string
+		err := db.Scan(&obj, "SELECT * FROM other:$", ID{123})
+		assert.NoError(t, err)
+	})
+	t.Run("With ranged id", func(t *testing.T) {
+		var obj []string
+		err := db.Scan(&obj, "SELECT * FROM other:$", Range{ID{123}, ID{457}})
+		assert.NoError(t, err)
+	})
 	t.Run("Scan only", func(t *testing.T) {
 		only := testObject{}
-		err := db.Scan(&only, "SELECT * FROM ONLY test WHERE time_since = $1", ts)
+		err := db.Scan(&only, "SELECT * FROM ONLY test WHERE time_since = $time_since", testObject{TimeSince: ts})
 		assert.NoError(t, err)
 		assert.Equal(t, testObject{TimeSince: ts, Name: name}, only)
 	})

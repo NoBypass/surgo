@@ -11,6 +11,12 @@ type Result struct {
 	Data     any
 	Error    error
 	Duration time.Duration
+	Query    Query
+}
+
+type Query struct {
+	Query  string
+	Params map[string]any
 }
 
 // Scan executes the query and scans the result into the given pointer struct or into a map.
@@ -44,21 +50,26 @@ func (db *DB) Scan(scan any, query string, args ...any) error {
 //
 //	db.Exec("SELECT * FROM table WHERE id = $1", 1)
 func (db *DB) Exec(query string, args ...any) ([]Result, error) {
-	params, err := db.parseParams(args)
+	params, err := parseParams(args)
 	if err != nil {
 		return nil, err
+	}
+	id, ok := params["$"]
+	if ok {
+		delete(params, "$")
+		var s string
+		switch id.(type) {
+		case ID:
+			s = id.(ID).string()
+		case Range:
+			s = id.(Range).string()
+		}
+		query = strings.Replace(query, ":$", fmt.Sprintf(":%s", s), 1)
 	}
 	return db.query(query, params)
 }
 
 // MustExec executes the query and panics if an error occurs at any point.
-// Parameters are supported as a map or simply multiple arguments. For Example:
-//
-//	db.MustExec("SELECT * FROM table WHERE id = $id", map[string]any{"id": 1})
-//
-// or
-//
-//	db.MustExec("SELECT * FROM table WHERE id = $1", 1)
 func (db *DB) MustExec(query string, args ...any) {
 	res, err := db.Exec(query, args...)
 	if err != nil {
@@ -74,35 +85,6 @@ func (db *DB) MustExec(query string, args ...any) {
 	}
 }
 
-func (db *DB) query(query string, params map[string]any) ([]Result, error) {
-	if !strings.HasSuffix(query, ";") {
-		query = query + ";"
-	}
-	resp, err := db.db.Query(query, params)
-	if err != nil {
-		return nil, err
-	}
+type ID [2]any
 
-	respSlice := resp.([]any)
-	resSlice := make([]Result, len(respSlice))
-	for i, s := range respSlice {
-		m := s.(map[string]any)
-		d, err := time.ParseDuration(m["time"].(string))
-		if err != nil {
-			return nil, err
-		}
-
-		resSlice[i] = Result{
-			Data: m["result"],
-			Error: func() error {
-				e, ok := m["error"]
-				if m["result"] == nil || !ok {
-					return nil
-				}
-				return fmt.Errorf(e.(string))
-			}(),
-			Duration: d,
-		}
-	}
-	return resSlice, nil
-}
+type Range [2]ID
