@@ -142,4 +142,5 @@ Just make a pull request, and it will be reviewed as soon as possible.
 ## To-Do
 
 - [ ] Optimize parameter parsing
+- [x] Automatically use string syntax for string IDs
 - [ ] Document IDs and Ranged IDs

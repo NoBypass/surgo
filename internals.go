@@ -183,18 +183,27 @@ func setVal(dest, src reflect.Value) {
 }
 
 func (id ID) string() string {
-	s := make([]string, 0, 2)
-	for _, v := range id {
-		if v == nil {
-			continue
+	if len(id) == 1 {
+		switch id[0].(type) {
+		case string:
+			return fmt.Sprintf("`%s`", strings.Replace(id[0].(string), "`", "", -1))
+		default:
+			return fmt.Sprintf("%v", id[0])
 		}
-		s = append(s, fmt.Sprintf("%v", v))
 	}
-	str := strings.Join(s, ", ")
-	if len(s) == 1 {
-		return str
+
+	str := "["
+	for _, v := range id {
+		switch v.(type) {
+		case string:
+			v = fmt.Sprintf("'%s'", strings.Replace(v.(string), "'", "", -1))
+		default:
+			v = fmt.Sprintf("%v", v)
+		}
+
+		str += fmt.Sprintf("%v, ", v)
 	}
-	return fmt.Sprintf("[%s]", str)
+	return str[:len(str)-1] + "]"
 }
 
 func (r Range) string() string {

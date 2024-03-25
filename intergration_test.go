@@ -51,6 +51,16 @@ SELECT * FROM test;
 		err := db.Scan(&obj, "SELECT * FROM other:$", Range{ID{123}, ID{457}})
 		assert.NoError(t, err)
 	})
+	t.Run("With string id", func(t *testing.T) {
+		var obj string
+		err := db.Scan(&obj, "SELECT * FROM other:$", ID{"123"})
+		assert.NoError(t, err)
+	})
+	t.Run("With ranged string id", func(t *testing.T) {
+		var obj []string
+		err := db.Scan(&obj, "SELECT * FROM other:$", Range{ID{"123"}, ID{"457"}})
+		assert.NoError(t, err)
+	})
 	t.Run("Scan only", func(t *testing.T) {
 		only := testObject{}
 		err := db.Scan(&only, "SELECT * FROM ONLY test WHERE time_since = $time_since", testObject{TimeSince: ts})

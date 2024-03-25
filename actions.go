@@ -36,6 +36,8 @@ func (db *DB) Scan(scan any, query string, args ...any) error {
 	last := res[len(res)-1]
 	if last.Error != nil {
 		return last.Error
+	} else if last.Data == nil || len(last.Data.([]any)) == 0 {
+		return nil
 	}
 
 	return scanData(scan, last)
@@ -85,6 +87,6 @@ func (db *DB) MustExec(query string, args ...any) {
 	}
 }
 
-type ID [2]any
+type ID []any
 
 type Range [2]ID
