@@ -5,10 +5,18 @@ import (
 	"github.com/surrealdb/surrealdb.go"
 )
 
-type Option [2]string
+type Option struct {
+	key string
+	val any
+}
 
 type DB struct {
-	db *surrealdb.DB
+	db QueryAgent
+}
+
+type QueryAgent interface {
+	Query(sql string, vars any) (any, error)
+	Close()
 }
 
 // Connect connects to a SurrealDB instance and returns a DB object.
@@ -21,9 +29,13 @@ func Connect(url string, options ...Option) (*DB, error) {
 		}
 	}
 
-	confMap := make(map[string]string)
+	confMap := make(map[string]any)
 	for _, option := range options {
-		confMap[option[0]] = option[1]
+		confMap[option.key] = option.val
+	}
+
+	if _, ok := confMap["agent"]; !ok {
+		confMap["agent"] = DefaultAgent
 	}
 
 	if _, err = db.Signin(confMap); err != nil {
@@ -38,13 +50,13 @@ func Connect(url string, options ...Option) (*DB, error) {
 	if !ok {
 		dbName = ""
 	}
-	_, err = db.Use(ns, dbName)
+	_, err = db.Use(ns.(string), dbName.(string))
 	if err != nil {
 		return nil, err
 	}
 
 	return &DB{
-		db: db,
+		db: confMap["agent"].(AgentFunc)(db),
 	}, nil
 }
 
@@ -76,4 +88,14 @@ func Namespace(namespace string) Option {
 
 func Database(database string) Option {
 	return Option{"DB", database}
+}
+
+var DefaultAgent = func(db *surrealdb.DB) QueryAgent {
+	return db
+}
+
+type AgentFunc func(db *surrealdb.DB) QueryAgent
+
+func CustomAgent(agentFunc AgentFunc) Option {
+	return Option{"agent", agentFunc}
 }
