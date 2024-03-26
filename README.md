@@ -58,18 +58,6 @@ db, err := surgo.Connect("127.0.0.1:8000",
     surgo.Namespace("namespace"))
 ```
 
-### Query agent
-The idea of the query agent is to allow the user to define their own way to query tha database. Query agent is an
-interface that has to be implemented in order to use it. The interface is as follows:
-```go
-type QueryAgent interface {
-    Query(query string, params map[string]any) (map[string]any, error)
-    Close() error
-}
-```
-Setting a custom QueryAgent is useful when you want to use a different way to query the database or implement for
-example a custom caching or tracing system.
-
 ## Querying
 
 ### Scanning

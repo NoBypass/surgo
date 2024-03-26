@@ -11,7 +11,7 @@ func (db *DB) query(query string, params map[string]any) ([]Result, error) {
 	if !strings.HasSuffix(query, ";") {
 		query = query + ";"
 	}
-	resp, err := db.db.Query(query, params)
+	resp, err := db.DB.Query(query, params)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ func structToMap[T any](content T) map[string]any {
 	for i := range nFields {
 		field := t.Field(i)
 		name := field.Name
-		if tag, ok := field.Tag.Lookup("db"); ok {
+		if tag, ok := field.Tag.Lookup("DB"); ok {
 			name = tag
 		}
 
@@ -165,7 +165,7 @@ func fillData(scan any, data any) error {
 	for k, v := range m {
 		for i := 0; i < t.NumField(); i++ {
 			field := t.Field(i)
-			if field.Tag.Get("db") == k || field.Name == k || strings.ToLower(field.Name) == k {
+			if field.Tag.Get("DB") == k || field.Name == k || strings.ToLower(field.Name) == k {
 				setVal(reflect.ValueOf(scan).Elem().Field(i), reflect.ValueOf(v))
 			}
 		}

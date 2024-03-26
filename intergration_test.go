@@ -7,7 +7,7 @@ import (
 )
 
 type testObject struct {
-	TimeSince int `db:"time_since"`
+	TimeSince int `DB:"time_since"`
 	Name      string
 }
 

@@ -46,11 +46,11 @@ func (db *DB) Scan(scan any, query string, args ...any) error {
 // Exec executes the query and returns the result. Parameters are supported as
 // a map or simply multiple arguments. For Example:
 //
-//	db.Exec("SELECT * FROM table WHERE id = $id", map[string]any{"id": 1})
+//	DB.Exec("SELECT * FROM table WHERE id = $id", map[string]any{"id": 1})
 //
 // or
 //
-//	db.Exec("SELECT * FROM table WHERE id = $1", 1)
+//	DB.Exec("SELECT * FROM table WHERE id = $1", 1)
 func (db *DB) Exec(query string, args ...any) ([]Result, error) {
 	params, err := parseParams(args)
 	if err != nil {

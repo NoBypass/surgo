@@ -11,7 +11,7 @@ type Option struct {
 }
 
 type DB struct {
-	db QueryAgent
+	DB QueryAgent
 }
 
 type QueryAgent interface {
@@ -34,10 +34,6 @@ func Connect(url string, options ...Option) (*DB, error) {
 		confMap[option.key] = option.val
 	}
 
-	if _, ok := confMap["agent"]; !ok {
-		confMap["agent"] = DefaultAgent
-	}
-
 	if _, err = db.Signin(confMap); err != nil {
 		return nil, err
 	}
@@ -56,7 +52,7 @@ func Connect(url string, options ...Option) (*DB, error) {
 	}
 
 	return &DB{
-		db: confMap["agent"].(AgentFunc)(db),
+		DB: DefaultAgent(db),
 	}, nil
 }
 
@@ -71,7 +67,7 @@ func MustConnect(url string, options ...Option) *DB {
 }
 
 func (db *DB) Close() {
-	db.db.Close()
+	db.DB.Close()
 }
 
 func User(username string) Option {
@@ -92,10 +88,4 @@ func Database(database string) Option {
 
 var DefaultAgent = func(db *surrealdb.DB) QueryAgent {
 	return db
-}
-
-type AgentFunc func(db *surrealdb.DB) QueryAgent
-
-func CustomAgent(agentFunc AgentFunc) Option {
-	return Option{"agent", agentFunc}
 }
