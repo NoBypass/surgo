@@ -59,7 +59,16 @@ func parseParams(args []any) (map[string]any, error) {
 			return nil, err
 		}
 		for k, v := range nm {
-			m[k] = v
+			switch v.(type) {
+			case []any:
+				if _, ok := m[k]; ok {
+					m[k] = append(m[k].([]any), v.([]any)...)
+					continue
+				}
+				m[k] = v
+			default:
+				m[k] = v
+			}
 		}
 	}
 
@@ -71,10 +80,10 @@ func parseParam(arg any, idx int) (map[string]any, error) {
 
 	switch arg.(type) {
 	case ID:
-		m["$"] = arg
+		m["$"] = []any{arg}
 		return m, nil
 	case Range:
-		m["$"] = arg
+		m["$"] = []any{arg}
 		return m, nil
 	}
 
@@ -96,7 +105,7 @@ func structToMap[T any](content T) map[string]any {
 	m := make(map[string]any, nFields)
 	for i := range nFields {
 		field := t.Field(i)
-		name := field.Name
+		name := strings.ToLower(field.Name)
 		if tag, ok := field.Tag.Lookup("DB"); ok {
 			name = tag
 		}

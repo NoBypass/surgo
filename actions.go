@@ -56,17 +56,20 @@ func (db *DB) Exec(query string, args ...any) ([]Result, error) {
 	if err != nil {
 		return nil, err
 	}
-	id, ok := params["$"]
+	ids, ok := params["$"]
 	if ok {
-		delete(params, "$")
-		var s string
-		switch id.(type) {
-		case ID:
-			s = id.(ID).string()
-		case Range:
-			s = id.(Range).string()
+		for _, id := range ids.([]any) {
+			var s string
+			switch id.(type) {
+			case ID:
+				s = id.(ID).string()
+			case Range:
+				s = id.(Range).string()
+			}
+			query = strings.Replace(query, ":$", fmt.Sprintf(":%s", s), 1)
 		}
-		query = strings.Replace(query, ":$", fmt.Sprintf(":%s", s), 1)
+
+		delete(params, "$")
 	}
 	return db.query(query, params)
 }
