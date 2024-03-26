@@ -106,7 +106,7 @@ func structToMap[T any](content T) map[string]any {
 	for i := range nFields {
 		field := t.Field(i)
 		name := strings.ToLower(field.Name)
-		if tag, ok := field.Tag.Lookup("DB"); ok {
+		if tag, ok := field.Tag.Lookup("db"); ok {
 			name = tag
 		}
 
