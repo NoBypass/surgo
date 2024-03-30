@@ -22,10 +22,10 @@ type Query struct {
 // Scan executes the query and scans the result into the given pointer struct or into a map.
 // If multiple results are expected, a pointer to a slice of structs or maps can be passed.
 // NOTE: Only the last result is scanned into the given object.
-func (db *DB) Scan(scan any, query string, args ...any) error {
-	v := reflect.ValueOf(scan)
+func (db *DB) Scan(dest any, query string, args ...any) error {
+	v := reflect.ValueOf(dest)
 	if v.Kind() != reflect.Ptr {
-		return fmt.Errorf("scan must be a pointer")
+		return fmt.Errorf("dest must be a pointer")
 	}
 
 	res, err := db.Exec(query, args...)
@@ -36,11 +36,11 @@ func (db *DB) Scan(scan any, query string, args ...any) error {
 	last := res[len(res)-1]
 	if last.Error != nil {
 		return last.Error
-	} else if last.Data == nil || len(last.Data.([]any)) == 0 {
+	} else if last.Data == nil {
 		return nil
 	}
 
-	return scanData(scan, last)
+	return scan(last.Data, dest)
 }
 
 // Exec executes the query and returns the result. Parameters are supported as

@@ -86,6 +86,34 @@ var user User
 err := db.Scan(&user, "SELECT * FROM users:$1 WHERE", 1)
 ```
 
+#### Behavior
+The `dest` input must have the same structure as the expected return value 
+from the query. This means you will have to provide a slice even if you used
+something like `LIMIT 1` and expect only one result. If you want to scan to a
+single struct, you have to use the `ONLY` keyword in the query (or index the
+returned array).
+
+Since the scanning is that strict, you also have to play attention in other
+cases like for example when mapping to a single variable. As an example, if
+you use count in SurrealDB, the result will be:
+```SQL
+SELECT count() FROM test GROUP ALL
+/* returns:
+[
+  {
+    "count": 2
+  }
+]
+*/
+```
+
+What you could do here is to wrap the query in a `RETURN` statement and then
+it will work just fine:
+```SQL
+RETURN (SELECT count() FROM test GROUP ALL)[0].count
+-- returns: 2
+```
+
 ### Exec
 Execute a query and return the result. The parameters can be just
 normal values, a map, or a struct. If a map or a struct is used, the
@@ -179,6 +207,4 @@ db.Exec("RELATE foo:$->edge->bar:$", surgo.ID{123}, surgo.ID{456}
 Just make a pull request, and it will be reviewed as soon as possible.
 
 ## To-Do
-- [ ] Optimize parameter parsing
-- [x] Automatically use string syntax for string IDs
-- [x] Document IDs and Ranged IDs
+- Improve error messages
