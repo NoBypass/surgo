@@ -43,9 +43,6 @@ func parseParam(arg any, idx int) (map[string]any, error) {
 	if arg == nil {
 		return nil, nil
 	}
-	if reflect.ValueOf(arg).IsZero() {
-		return nil, nil
-	}
 	m := make(map[string]any, 1)
 
 	switch arg.(type) {

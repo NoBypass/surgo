@@ -55,6 +55,17 @@ func Test_parseQuery(t *testing.T) {
 		assert.NoError(t, err)
 		m.AssertCalled(t, "Query", query, map[string]any{"1": 1})
 	})
+	t.Run("Query wuth zero value parameter", func(t *testing.T) {
+		m := new(MockQueryAgent)
+		db := &DB{m}
+		query := "SELECT * FROM test WHERE id = $1;"
+
+		m.On("Query", mock.Anything, mock.Anything).Return(emptyResponse, nil)
+		_, err := db.Exec(query, 0)
+
+		assert.NoError(t, err)
+		m.AssertCalled(t, "Query", query, map[string]any{"1": 0})
+	})
 	t.Run("Query with multiple slice parameters", func(t *testing.T) {
 		m := new(MockQueryAgent)
 		db := &DB{m}
