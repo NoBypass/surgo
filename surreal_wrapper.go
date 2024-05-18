@@ -10,6 +10,7 @@ func (db *DB) query(query string, params map[string]any) ([]Result, error) {
 	if !strings.HasSuffix(query, ";") {
 		query = query + ";"
 	}
+
 	resp, err := db.DB.Query(query, params)
 	if err != nil {
 		return nil, err
@@ -40,9 +41,7 @@ func (db *DB) query(query string, params map[string]any) ([]Result, error) {
 		}
 
 		resSlice[i].Duration = d
-		resSlice[i].Query = Query{
-			query, params,
-		}
+		resSlice[i].Query = Query{query, params}
 	}
 	return resSlice, nil
 }

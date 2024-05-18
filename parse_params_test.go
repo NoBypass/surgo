@@ -1,9 +1,11 @@
 package surgo
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"testing"
+	"time"
 )
 
 type MockQueryAgent struct {
@@ -244,5 +246,49 @@ func Test_parseQuery(t *testing.T) {
 			"name": "test",
 			"1":    1,
 		})
+	})
+	t.Run("Query with a date id", func(t *testing.T) {
+		m := new(MockQueryAgent)
+		db := &DB{m}
+		query := "SELECT * FROM test:$"
+
+		m.On("Query", mock.Anything, mock.Anything).Return(emptyResponse, nil)
+		now := time.Now()
+		_, err := db.Exec(query, ID{Date{now}})
+
+		assert.NoError(t, err)
+		m.AssertCalled(t, "Query", fmt.Sprintf("SELECT * FROM test:`%s`;", now.Format(time.DateOnly)), map[string]any{})
+	})
+	t.Run("Query with a datetime id", func(t *testing.T) {
+		m := new(MockQueryAgent)
+		db := &DB{m}
+		query := "SELECT * FROM test:$"
+
+		m.On("Query", mock.Anything, mock.Anything).Return(emptyResponse, nil)
+		now := time.Now()
+		_, err := db.Exec(query, ID{Datetime{now}})
+
+		assert.NoError(t, err)
+		m.AssertCalled(t, "Query", fmt.Sprintf("SELECT * FROM test:`%s`;", now.Format(time.RFC3339)), map[string]any{})
+	})
+	t.Run("Query with a ranged date id", func(t *testing.T) {
+		m := new(MockQueryAgent)
+		db := &DB{m}
+		query := "SELECT * FROM test:$"
+
+		m.On("Query", mock.Anything, mock.Anything).Return(emptyResponse, nil)
+		now := time.Now()
+		_, err := db.Exec(query, Range{
+			ID{"test", Date{now}},
+			ID{"test", Date{now.AddDate(0, 0, 1)}},
+		})
+
+		assert.NoError(t, err)
+		m.AssertCalled(t, "Query",
+			fmt.Sprintf("SELECT * FROM test:['test', <datetime>'%s']..['test', <datetime>'%s'];",
+				now.Format(time.DateOnly),
+				now.AddDate(0, 0, 1).Format(time.DateOnly)),
+			map[string]any{},
+		)
 	})
 }

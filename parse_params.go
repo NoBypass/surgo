@@ -84,31 +84,3 @@ func structToMap[T any](content T) map[string]any {
 
 	return m
 }
-
-func (id ID) string() string {
-	if len(id) == 1 {
-		switch id[0].(type) {
-		case string:
-			return fmt.Sprintf("`%s`", strings.Replace(id[0].(string), "`", "", -1))
-		default:
-			return fmt.Sprintf("%v", id[0])
-		}
-	}
-
-	str := "["
-	for _, v := range id {
-		switch v.(type) {
-		case string:
-			v = fmt.Sprintf("'%s'", strings.Replace(v.(string), "'", "", -1))
-		default:
-			v = fmt.Sprintf("%v", v)
-		}
-
-		str += fmt.Sprintf("%v, ", v)
-	}
-	return str[:len(str)-2] + "]"
-}
-
-func (r Range) string() string {
-	return fmt.Sprintf("%s..%s", r[0].string(), r[1].string())
-}

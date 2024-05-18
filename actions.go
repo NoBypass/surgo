@@ -89,7 +89,3 @@ func (db *DB) MustExec(query string, args ...any) {
 		}
 	}
 }
-
-type ID []any
-
-type Range [2]ID
