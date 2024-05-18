@@ -7,18 +7,19 @@ import (
 )
 
 func parseParams(args []any) (map[string]any, error) {
+	currIdx := 0
 	if len(args) == 0 {
 		return nil, nil
 	} else if len(args) == 1 {
-		return parseParam(args[0], 0)
+		return parseParam(args[0], &currIdx)
 	}
 
 	m := make(map[string]any)
-	for i, arg := range args {
+	for _, arg := range args {
 		if arg == nil {
 			continue
 		}
-		nm, err := parseParam(arg, i)
+		nm, err := parseParam(arg, &currIdx)
 		if err != nil {
 			return nil, err
 		}
@@ -34,12 +35,13 @@ func parseParams(args []any) (map[string]any, error) {
 				m[k] = v
 			}
 		}
+		currIdx++
 	}
 
 	return m, nil
 }
 
-func parseParam(arg any, idx int) (map[string]any, error) {
+func parseParam(arg any, idx *int) (map[string]any, error) {
 	if arg == nil {
 		return nil, nil
 	}
@@ -57,11 +59,13 @@ func parseParam(arg any, idx int) (map[string]any, error) {
 	v := reflect.ValueOf(arg)
 	switch v.Kind() {
 	case reflect.Map:
+		*idx--
 		return arg.(map[string]any), nil
 	case reflect.Struct:
+		*idx--
 		return structToMap(arg), nil
 	default:
-		m[fmt.Sprintf("%d", idx+1)] = v.Interface()
+		m[fmt.Sprintf("%d", *idx+1)] = v.Interface()
 		return m, nil
 	}
 }
