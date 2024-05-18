@@ -17,6 +17,11 @@ type nestedTestStruct struct {
 	Test  testStruct
 }
 
+type nestedTestStructPtr struct {
+	Title string
+	Test  *testStruct
+}
+
 func Test_scan(t *testing.T) {
 	t.Run("scan single map to struct", func(t *testing.T) {
 		m := map[string]any{
@@ -163,6 +168,82 @@ func Test_scan(t *testing.T) {
 			Test: testStruct{
 				CreatedAt: 123,
 			},
+		}, s)
+	})
+	t.Run("scan single map to nested struct with pointer", func(t *testing.T) {
+		m := map[string]any{
+			"title": "hello",
+			"test": map[string]any{
+				"text": "world",
+			},
+		}
+
+		var s nestedTestStructPtr
+		err := scan(m, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, nestedTestStructPtr{
+			Title: "hello",
+			Test: &testStruct{
+				Text: "world",
+			},
+		}, s)
+	})
+	t.Run("scan multiple maps to nested with pointer", func(t *testing.T) {
+		m := []map[string]any{
+			{
+				"title": "hello",
+			},
+			{
+				"test": map[string]any{
+					"text": "world",
+				},
+			},
+		}
+
+		var s []nestedTestStructPtr
+		err := scan(m, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, []nestedTestStructPtr{
+			{
+				Title: "hello",
+			},
+			{
+				Test: &testStruct{
+					Text: "world",
+				},
+			},
+		}, s)
+	})
+	t.Run("scan single map to nested struct with tag and pointer", func(t *testing.T) {
+		m := map[string]any{
+			"title": "hello",
+			"test": map[string]any{
+				"created_at": 123,
+			},
+		}
+
+		var s nestedTestStructPtr
+		err := scan(m, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, nestedTestStructPtr{
+			Title: "hello",
+			Test: &testStruct{
+				CreatedAt: 123,
+			},
+		}, s)
+	})
+	t.Run("scan nested nil struct to pointer", func(t *testing.T) {
+		m := map[string]any{
+			"title": "hello",
+			"test":  nil,
+		}
+
+		var s nestedTestStructPtr
+		err := scan(m, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, nestedTestStructPtr{
+			Title: "hello",
+			Test:  nil,
 		}, s)
 	})
 }

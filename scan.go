@@ -45,11 +45,20 @@ func parseSlice(srcVal reflect.Value, destVal reflect.Value) error {
 }
 
 func parseMap(srcVal reflect.Value, destVal reflect.Value) error {
-	if destVal.Kind() != reflect.Struct {
-		return fmt.Errorf("cannot assign map to %s", destVal.Type())
-	}
-
+	destKind := destVal.Kind()
 	destType := destVal.Type()
+
+	if destKind == reflect.Ptr {
+		if destVal.IsNil() {
+			newDest := reflect.New(destType.Elem())
+			destVal.Set(newDest)
+		}
+
+		destVal = destVal.Elem()
+		destType = destVal.Type()
+	} else if destKind != reflect.Struct {
+		return fmt.Errorf("cannot assign map to %s", destType)
+	}
 
 	for i := 0; i < destType.NumField(); i++ {
 		field := destType.Field(i)
@@ -78,6 +87,10 @@ func parseMap(srcVal reflect.Value, destVal reflect.Value) error {
 }
 
 func parseValue(srcVal reflect.Value, destVal reflect.Value) error {
+	if !srcVal.IsValid() {
+		return nil
+	}
+
 	if !srcVal.Type().AssignableTo(destVal.Type()) {
 		if destVal.Kind() == reflect.Int && srcVal.Kind() == reflect.Float64 {
 			destVal.SetInt(int64(srcVal.Float()))
