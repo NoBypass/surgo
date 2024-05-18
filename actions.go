@@ -56,6 +56,7 @@ func (db *DB) Exec(query string, args ...any) ([]Result, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	ids, ok := params["$"]
 	if ok {
 		for _, id := range ids.([]any) {

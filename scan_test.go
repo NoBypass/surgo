@@ -3,6 +3,7 @@ package surgo
 import (
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
 type testStruct struct {
@@ -10,6 +11,10 @@ type testStruct struct {
 	Text      string
 	CreatedAt int `db:"created_at"`
 	Age       float64
+}
+
+type testStructWithTime struct {
+	Time time.Time
 }
 
 type nestedTestStruct struct {
@@ -244,6 +249,18 @@ func Test_scan(t *testing.T) {
 		assert.Equal(t, nestedTestStructPtr{
 			Title: "hello",
 			Test:  nil,
+		}, s)
+	})
+	t.Run("scan to time.Time field", func(t *testing.T) {
+		m := map[string]any{
+			"time": "2011-01-01T00:00:00Z",
+		}
+
+		var s testStructWithTime
+		err := scan(m, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, testStructWithTime{
+			Time: time.Date(2011, 1, 1, 0, 0, 0, 0, time.UTC),
 		}, s)
 	})
 }

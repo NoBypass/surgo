@@ -1,8 +1,7 @@
 # SurGo
 A simple sqlx-like library for using SurrealDB in Go.
 
-## Table of Contents
-* [Table of Contents](#table-of-contents)
+**Table of Contents**
 * [Installation](#installation)
 * [Connecting to a database](#connecting-to-a-database)
   * [Configure the connection](#configure-the-connection)
@@ -140,8 +139,8 @@ type User struct {
     Age  int
 }
 result, err := db.Exec("INSERT INTO users (name, age) VALUES ($name, $age)", User{
-	Name: "John",
-    Age:  25,
+	Name: "John", 
+	Age:  25,
 })
 ```
 
@@ -203,8 +202,14 @@ db.Exec("RELATE foo:$->edge->bar:$", surgo.ID{123}, surgo.ID{456}
 // will be parsed to: RELATE foo:123->edge->bar:456
 ```
 
-## Contributing
-Just make a pull request, and it will be reviewed as soon as possible.
+### Datetimes and Durations
+You can use the `time.Time` type for datetime values. The library will automatically convert them to the correct format
+for SurrealDB. Some goes for the `time.Duration` type. It will be converted to the highest possible unit (e.g. seconds)
+that keeps the precision. Both of these types can be used as parameters in query functions. It does not matter if they are used as normal values,
+in maps, or in structs. When scanning if the destination field is of type `time.Time` and the source is a string, the library will try to parse
+the string to a `time.Time` object.
+
 
 ## To-Do
-- Improve error messages
+- Improve error messages/errors in general
+- Use variables in ranged IDs

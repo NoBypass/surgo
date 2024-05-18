@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 )
 
 func scan(src any, dest any) error {
@@ -94,6 +95,14 @@ func parseValue(srcVal reflect.Value, destVal reflect.Value) error {
 	if !srcVal.Type().AssignableTo(destVal.Type()) {
 		if destVal.Kind() == reflect.Int && srcVal.Kind() == reflect.Float64 {
 			destVal.SetInt(int64(srcVal.Float()))
+			return nil
+		} else if destVal.Type() == reflect.TypeOf(time.Time{}) && srcVal.Kind() == reflect.String {
+			t, err := time.Parse(time.RFC3339, srcVal.String())
+			if err != nil {
+				return err
+			}
+
+			destVal.Set(reflect.ValueOf(t))
 			return nil
 		}
 

@@ -53,16 +53,36 @@ func parseParam(arg any, idx *int) (map[string]any, error) {
 	case Range:
 		m["$"] = []any{arg}
 		return m, nil
+	default:
+		t, ok := parseTimes(arg)
+		if ok {
+			m[fmt.Sprintf("%d", *idx+1)] = t
+			*idx++
+			return m, nil
+		}
 	}
 
 	v := reflect.ValueOf(arg)
 	switch v.Kind() {
 	case reflect.Map:
-		return arg.(map[string]any), nil
+		m := arg.(map[string]any)
+		for k, v := range m {
+			t, ok := parseTimes(v)
+			if ok {
+				m[k] = t
+			}
+		}
+		return m, nil
 	case reflect.Struct:
 		return structToMap(arg), nil
 	default:
-		m[fmt.Sprintf("%d", *idx+1)] = v.Interface()
+		var val any
+		val, ok := parseTimes(arg)
+		if !ok {
+			val = v.Interface()
+		}
+
+		m[fmt.Sprintf("%d", *idx+1)] = val
 		*idx++
 		return m, nil
 	}
@@ -79,7 +99,12 @@ func structToMap[T any](content T) map[string]any {
 			name = tag
 		}
 
-		m[name] = reflect.ValueOf(content).Field(i).Interface()
+		v := reflect.ValueOf(content).Field(i).Interface()
+		ts, ok := parseTimes(v)
+		if ok {
+			v = ts
+		}
+		m[name] = v
 	}
 
 	return m

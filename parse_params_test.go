@@ -247,18 +247,6 @@ func Test_parseQuery(t *testing.T) {
 			"1":    1,
 		})
 	})
-	t.Run("Query with a date id", func(t *testing.T) {
-		m := new(MockQueryAgent)
-		db := &DB{m}
-		query := "SELECT * FROM test:$"
-
-		m.On("Query", mock.Anything, mock.Anything).Return(emptyResponse, nil)
-		now := time.Now()
-		_, err := db.Exec(query, ID{Date{now}})
-
-		assert.NoError(t, err)
-		m.AssertCalled(t, "Query", fmt.Sprintf("SELECT * FROM test:`%s`;", now.Format(time.DateOnly)), map[string]any{})
-	})
 	t.Run("Query with a datetime id", func(t *testing.T) {
 		m := new(MockQueryAgent)
 		db := &DB{m}
@@ -266,7 +254,7 @@ func Test_parseQuery(t *testing.T) {
 
 		m.On("Query", mock.Anything, mock.Anything).Return(emptyResponse, nil)
 		now := time.Now()
-		_, err := db.Exec(query, ID{Datetime{now}})
+		_, err := db.Exec(query, ID{now})
 
 		assert.NoError(t, err)
 		m.AssertCalled(t, "Query", fmt.Sprintf("SELECT * FROM test:`%s`;", now.Format(time.RFC3339)), map[string]any{})
@@ -279,16 +267,31 @@ func Test_parseQuery(t *testing.T) {
 		m.On("Query", mock.Anything, mock.Anything).Return(emptyResponse, nil)
 		now := time.Now()
 		_, err := db.Exec(query, Range{
-			ID{"test", Date{now}},
-			ID{"test", Date{now.AddDate(0, 0, 1)}},
+			ID{"test", now},
+			ID{"test", now.AddDate(0, 0, 1)},
 		})
 
 		assert.NoError(t, err)
 		m.AssertCalled(t, "Query",
 			fmt.Sprintf("SELECT * FROM test:['test', <datetime>'%s']..['test', <datetime>'%s'];",
-				now.Format(time.DateOnly),
-				now.AddDate(0, 0, 1).Format(time.DateOnly)),
+				now.Format(time.RFC3339),
+				now.AddDate(0, 0, 1).Format(time.RFC3339)),
 			map[string]any{},
 		)
+	})
+	t.Run("Query with a time and duration", func(t *testing.T) {
+		m := new(MockQueryAgent)
+		db := &DB{m}
+		query := "CREATE test SET time = $1 + $2"
+
+		m.On("Query", mock.Anything, mock.Anything).Return(emptyResponse, nil)
+		now := time.Now()
+		_, err := db.Exec(query, now, time.Hour)
+
+		assert.NoError(t, err)
+		m.AssertCalled(t, "Query", "CREATE test SET time = $1 + $2;", map[string]any{
+			"1": now.Format(time.RFC3339),
+			"2": "1h",
+		})
 	})
 }
