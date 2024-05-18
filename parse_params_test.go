@@ -220,4 +220,29 @@ func Test_parseQuery(t *testing.T) {
 		assert.NoError(t, err)
 		m.AssertCalled(t, "Query", "SELECT * FROM test:[1, '2']..[3, '4'];", map[string]any{})
 	})
+	t.Run("Query with an id and slice parameter", func(t *testing.T) {
+		m := new(MockQueryAgent)
+		db := &DB{m}
+		query := "SELECT * FROM test:$ WHERE id = $1"
+
+		m.On("Query", mock.Anything, mock.Anything).Return(emptyResponse, nil)
+		_, err := db.Exec(query, ID{"1"}, 1)
+
+		assert.NoError(t, err)
+		m.AssertCalled(t, "Query", "SELECT * FROM test:`1` WHERE id = $1;", map[string]any{"1": 1})
+	})
+	t.Run("Query with an id, map and slice parameter", func(t *testing.T) {
+		m := new(MockQueryAgent)
+		db := &DB{m}
+		query := "SELECT * FROM test:$ WHERE name = $name AND id = $1"
+
+		m.On("Query", mock.Anything, mock.Anything).Return(emptyResponse, nil)
+		_, err := db.Exec(query, ID{"1"}, map[string]any{"name": "test"}, 1)
+
+		assert.NoError(t, err)
+		m.AssertCalled(t, "Query", "SELECT * FROM test:`1` WHERE name = $name AND id = $1;", map[string]any{
+			"name": "test",
+			"1":    1,
+		})
+	})
 }

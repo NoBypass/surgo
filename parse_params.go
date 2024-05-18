@@ -35,7 +35,6 @@ func parseParams(args []any) (map[string]any, error) {
 				m[k] = v
 			}
 		}
-		currIdx++
 	}
 
 	return m, nil
@@ -59,13 +58,12 @@ func parseParam(arg any, idx *int) (map[string]any, error) {
 	v := reflect.ValueOf(arg)
 	switch v.Kind() {
 	case reflect.Map:
-		*idx--
 		return arg.(map[string]any), nil
 	case reflect.Struct:
-		*idx--
 		return structToMap(arg), nil
 	default:
 		m[fmt.Sprintf("%d", *idx+1)] = v.Interface()
+		*idx++
 		return m, nil
 	}
 }
