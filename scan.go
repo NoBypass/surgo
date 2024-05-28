@@ -51,8 +51,7 @@ func parseMap(srcVal reflect.Value, destVal reflect.Value) error {
 
 	if destKind == reflect.Ptr {
 		if destVal.IsNil() {
-			newDest := reflect.New(destType.Elem())
-			destVal.Set(newDest)
+			destVal.Set(reflect.New(destType.Elem()))
 		}
 
 		destVal = destVal.Elem()
@@ -103,6 +102,9 @@ func parseValue(srcVal reflect.Value, destVal reflect.Value) error {
 			}
 
 			destVal.Set(reflect.ValueOf(t))
+			return nil
+		} else if srcVal.Kind() != destVal.Kind() {
+			destVal.Set(reflect.Zero(destVal.Type()))
 			return nil
 		}
 

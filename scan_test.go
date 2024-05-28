@@ -263,4 +263,24 @@ func Test_scan(t *testing.T) {
 			Time: time.Date(2011, 1, 1, 0, 0, 0, 0, time.UTC),
 		}, s)
 	})
+	t.Run("scan incompatible to pointer", func(t *testing.T) {
+		m := map[string]any{
+			"test": "other_test:123",
+		}
+
+		var s *nestedTestStructPtr
+		err := scan(m, &s)
+		assert.NoError(t, err)
+		assert.Nil(t, s.Test)
+	})
+	t.Run("scan incompatible", func(t *testing.T) {
+		m := map[string]any{
+			"title": 123,
+		}
+
+		var s *nestedTestStructPtr
+		err := scan(m, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, "", s.Title)
+	})
 }
