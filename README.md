@@ -3,9 +3,9 @@ A simple sqlx-like library for using SurrealDB in Go.
 
 **Table of Contents**
 * [Installation](#installation)
+* [To-Do](#to-do)
 * [Connecting to a database](#connecting-to-a-database)
   * [Configure the connection](#configure-the-connection)
-  * [Query agent](#query-agent)
 * [Querying](#querying)
   * [Scanning](#scanning)
   * [Exec](#exec)
@@ -15,8 +15,7 @@ A simple sqlx-like library for using SurrealDB in Go.
     * [Normal/Array IDs](#normalarray-ids)
     * [Ranged IDs](#ranged-ids)
     * [Using multiple IDs](#using-multiple-ids)
-* [Contributing](#contributing)
-* [To-Do](#to-do)
+  * [Datetimes and Durations](#datetimes-and-durations)
 
 ## Installation
 Add the library to your go project using the following command:
@@ -24,6 +23,14 @@ Add the library to your go project using the following command:
 go get github.com/NoBypass/surgo
 ```
 **Make sure that your Go project runs on version 1.22 or later!**
+
+## To-Do
+- Fix not parsing back from string to `time.Duration` in scanning
+- Allow pointers to structs for parameters
+- Allow scanning to a nil pointer
+- Improve/Update Docs
+- Use SurrealDB variables in ranged IDs
+- Improve error messages/errors in general
 
 ## Connecting to a database
 Connect to a database and get a DB object and an error.
@@ -208,8 +215,3 @@ for SurrealDB. Some goes for the `time.Duration` type. It will be converted to t
 that keeps the precision. Both of these types can be used as parameters in query functions. It does not matter if they are used as normal values,
 in maps, or in structs. When scanning if the destination field is of type `time.Time` and the source is a string, the library will try to parse
 the string to a `time.Time` object.
-
-
-## To-Do
-- Improve error messages/errors in general
-- Use variables in ranged IDs
