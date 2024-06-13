@@ -25,12 +25,16 @@ go get github.com/NoBypass/surgo
 **Make sure that your Go project runs on version 1.22 or later!**
 
 ## To-Do
-- Fix not parsing back from string to `time.Duration` in scanning
-- Allow pointers to structs for parameters
-- Allow scanning to a nil pointer
-- Improve/Update Docs
-- Use SurrealDB variables in ranged IDs
-- Improve error messages/errors in general
+- [x] Fix not parsing back from string to `time.Duration` in scanning
+- [x] Add support for `Record` type
+- [x] Parse surreal record id to `ID` type
+- [x] Implement converting ID types
+- [ ] Implement converting struct to query insertable string
+- [ ] Allow pointers to structs for parameters
+- [ ] Allow scanning to a nil pointer
+- [ ] Improve/Update Docs
+- [ ] Use SurrealDB variables in ranged IDs
+- [ ] Improve error messages/errors in general
 
 ## Connecting to a database
 Connect to a database and get a DB object and an error.

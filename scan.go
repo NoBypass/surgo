@@ -92,23 +92,45 @@ func parseValue(srcVal reflect.Value, destVal reflect.Value) error {
 	}
 
 	if !srcVal.Type().AssignableTo(destVal.Type()) {
-		if destVal.Kind() == reflect.Int && srcVal.Kind() == reflect.Float64 {
+		if destVal.Type() == reflect.TypeOf(ID{}) && srcVal.Kind() == reflect.String {
+			destVal.Set(reflect.ValueOf(stringToID(strings.Split(srcVal.String(), ":")[1])))
+			return nil
+		} else if strings.Split(destVal.Type().String(), "[")[0] == "surgo.Record" {
+			if srcVal.Kind() == reflect.String {
+				destVal.FieldByName("ID").Set(reflect.ValueOf(stringToID(srcVal.String())))
+				return nil
+			} else {
+				underlyingType := destVal.FieldByName("Data").Elem().Type()
+				newInstance := reflect.New(underlyingType)
+				if err := scan(srcVal.Interface(), newInstance.Interface()); err != nil {
+					return err
+				}
+				destVal.FieldByName("Data").Set(newInstance.Elem())
+				return nil
+			}
+		} else if destVal.Kind() == reflect.Int && srcVal.Kind() == reflect.Float64 {
 			destVal.SetInt(int64(srcVal.Float()))
 			return nil
 		} else if destVal.Type() == reflect.TypeOf(time.Time{}) && srcVal.Kind() == reflect.String {
-			t, err := time.Parse(time.RFC3339, srcVal.String())
+			t, err := stringToTime(srcVal.String())
 			if err != nil {
 				return err
 			}
 
 			destVal.Set(reflect.ValueOf(t))
 			return nil
-		} else if srcVal.Kind() != destVal.Kind() {
-			destVal.Set(reflect.Zero(destVal.Type()))
+		} else if destVal.Type().String() == "time.Duration" && srcVal.Kind() == reflect.String {
+			d, err := stringToDuration(srcVal.String())
+			if err != nil {
+				return err
+			}
+
+			destVal.Set(reflect.ValueOf(d))
 			return nil
 		}
 
-		return fmt.Errorf("cannot assign %s to %s", srcVal.Type(), destVal.Type())
+		destVal.Set(reflect.Zero(destVal.Type()))
+		return nil
 	}
 
 	destVal.Set(srcVal)

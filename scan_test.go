@@ -2,6 +2,7 @@ package surgo
 
 import (
 	"github.com/stretchr/testify/assert"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -25,6 +26,10 @@ type nestedTestStruct struct {
 type nestedTestStructPtr struct {
 	Title string
 	Test  *testStruct
+}
+
+type testStructWithID struct {
+	ID ID
 }
 
 func Test_scan(t *testing.T) {
@@ -282,5 +287,46 @@ func Test_scan(t *testing.T) {
 		err := scan(m, &s)
 		assert.NoError(t, err)
 		assert.Equal(t, "", s.Title)
+	})
+	t.Run("scan string to time.Time", func(t *testing.T) {
+		m := "2011-01-01T00:00:00Z"
+
+		var s time.Time
+		err := scan(m, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, time.Date(2011, 1, 1, 0, 0, 0, 0, time.UTC), s)
+	})
+	t.Run("scan string to time.Duration", func(t *testing.T) {
+		m := "1h"
+
+		var s time.Duration
+		err := scan(m, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, time.Hour, s)
+	})
+	t.Run("scan int id string to ID", func(t *testing.T) {
+		m := map[string]any{
+			"id": "test:123",
+		}
+
+		var s testStructWithID
+		err := scan(m, &s)
+		s.ID.Convert(reflect.Int)
+		assert.NoError(t, err)
+		assert.Equal(t, testStructWithID{
+			ID: ID{123},
+		}, s)
+	})
+	t.Run("scan string id string to ID", func(t *testing.T) {
+		m := map[string]any{
+			"id": "test:`primary`",
+		}
+
+		var s testStructWithID
+		err := scan(m, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, testStructWithID{
+			ID: ID{"primary"},
+		}, s)
 	})
 }
