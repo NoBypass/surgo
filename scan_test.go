@@ -283,4 +283,68 @@ func Test_scan(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "", s.Title)
 	})
+	t.Run("scan to map with string value", func(t *testing.T) {
+		m := map[string]any{
+			"title":  "test",
+			"title2": "test2",
+		}
+
+		s := make(map[string]string)
+		err := scan(m, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]string{
+			"title":  "test",
+			"title2": "test2",
+		}, s)
+	})
+	t.Run("scan to map with mixed values", func(t *testing.T) {
+		m := map[string]any{
+			"title":       "test",
+			"description": 123,
+			"exists":      true,
+		}
+
+		s := make(map[string]any)
+		err := scan(m, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]any{
+			"title":       "test",
+			"description": 123,
+			"exists":      true,
+		}, s)
+	})
+	t.Run("scan to map with struct values", func(t *testing.T) {
+		m := map[string]any{
+			"1": map[string]any{
+				"success":    true,
+				"text":       "hello",
+				"age":        1.23,
+				"created_at": 123,
+			},
+			"2": map[string]any{
+				"success":    false,
+				"text":       "bye",
+				"age":        0,
+				"created_at": 0,
+			},
+		}
+
+		s := make(map[string]testStruct)
+		err := scan(m, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, map[string]testStruct{
+			"1": {
+				Success:   true,
+				Text:      "hello",
+				Age:       1.23,
+				CreatedAt: 123,
+			},
+			"2": {
+				Success:   false,
+				Text:      "bye",
+				Age:       0,
+				CreatedAt: 0,
+			},
+		}, s)
+	})
 }

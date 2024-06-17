@@ -49,7 +49,26 @@ func parseMap(srcVal reflect.Value, destVal reflect.Value) error {
 	destKind := destVal.Kind()
 	destType := destVal.Type()
 
-	if destKind == reflect.Ptr {
+	if destKind == reflect.Map {
+		if destType.Key().Kind() != reflect.String {
+			return fmt.Errorf("cannot assign to map with non-string key type")
+		}
+
+		destVal.Set(reflect.MakeMap(destType))
+
+		for _, keyVal := range srcVal.MapKeys() {
+			srcElemVal := srcVal.MapIndex(keyVal)
+			destElemVal := reflect.New(destType.Elem()).Elem()
+
+			if err := scan(srcElemVal.Interface(), destElemVal.Addr().Interface()); err != nil {
+				return err
+			}
+
+			destVal.SetMapIndex(keyVal, destElemVal)
+		}
+
+		return nil
+	} else if destKind == reflect.Ptr {
 		if destVal.IsNil() {
 			destVal.Set(reflect.New(destType.Elem()))
 		}
