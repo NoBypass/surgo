@@ -4,11 +4,10 @@ import (
 	"errors"
 	"github.com/NoBypass/surgo/surrealdb"
 	"github.com/NoBypass/surgo/surrealdb/pkg/conn/gorilla"
+	"os"
 )
 
-const (
-	NONE = "NONE"
-)
+var fallbackTag = ""
 
 type DB struct {
 	Conn *surrealdb.DB
@@ -43,6 +42,8 @@ func Connect(url string, creds *Credentials) (*DB, error) {
 	if err != nil {
 		return nil, ErrInvalidCredentials
 	}
+
+	fallbackTag = os.Getenv("SURGO_FALLBACK_TAG")
 
 	return &DB{db}, nil
 }

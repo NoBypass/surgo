@@ -21,6 +21,7 @@ func (r *Result) Unmarshal(dest any) error {
 
 // Query executes the query and returns the results.
 func (db *DB) Query(query string, vars map[string]any) ([]Result, error) {
+	vars = parseVars(vars)
 	res, err := db.Conn.Query(query, vars)
 	if err != nil {
 		return nil, err

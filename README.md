@@ -12,13 +12,12 @@
 <h2 align=center>Features</h2>
 <p align=center><b>Features over the original library:</b></p>
 <br />
-<div style="display: flex; text-align: center; flex-direction: column; line-height: 0;">
-  <p>Simplified database connection</p>
-  <p>Ability to directly scan the result into a struct using sqlx-like syntax</p>
-  <p>A consistent <code>Result</code> type instead of using <code>interface{}</code></p>
-  <p>Consistent error handling</p>
-  <p>Up-to-date Documentation</p>
-</div>
+<p align="center">Simplified database connection</p>
+<p align="center">Ability to directly scan the result into a struct using sqlx-like syntax</p>
+<p align="center">A consistent <code>Result</code> type instead of using <code>interface{}</code></p>
+<p align="center">Consistent error handling</p>
+<p align="center">Up-to-date Documentation</p>
+<p align="center">Support for struct tags</p>
 
 ## Installation
 ```bash
@@ -91,3 +90,32 @@ err := db.Scan(&john, "SELECT * FROM ONLY $john", map[string]any{
     "john": "users:john",
 })
 ```
+
+### Struct Tags
+Struct tags essentially work the same way as in the `json` package. A full example would look like this:
+
+```go
+type User struct {
+    // this field will be mapped to the "id" key
+    ID   string `db:"id"`
+	// this field will be omitted if it is empty, otherwise it will be mapped to the "name" key
+    Name string `db:"name,omitempty"`
+	// this field will be ignored
+    Age  int    `db:"-"`
+    // this field will be mapped to the "Address" key
+	Address string
+}
+
+_, err := db.Query("CREATE $john CONTENT $data", map[string]any{
+    "john": "users:john",
+	"data": User{
+        ID:   "john",
+        Name: "John Doe",
+        Age:  42,
+    },
+})
+```
+
+If your `db` tags would often end up being the same as other tags (for example the `json` tag) you can specify a
+fallback tag using the `SURGO_FALLBACK_TAG` environment variable. If this variable is set, the library will use the
+specified tag as a fallback if no `db` tag is present.
