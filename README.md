@@ -18,7 +18,7 @@
 <p align="center">Consistent error handling</p>
 <p align="center">Up-to-date Documentation</p>
 <p align="center">Support for struct tags</p>
-<p align="center">Support for `time.Duration` and `time.Time`</p>
+<p align="center">Support for <code>time.Duration</code> and <code>time.Time</code></p>
 
 ## Installation
 ```bash
