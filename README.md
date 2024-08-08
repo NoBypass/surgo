@@ -18,6 +18,7 @@
 <p align="center">Consistent error handling</p>
 <p align="center">Up-to-date Documentation</p>
 <p align="center">Support for struct tags</p>
+<p align="center">Support for `time.Duration` and `time.Time`</p>
 
 ## Installation
 ```bash
@@ -26,7 +27,6 @@ go get github.com/NoBypass/surgo
 > Make sure that your Go project runs on version 1.22 or later!
 
 ## Roadmap
-- Automatically convert `time.Duration` and `time.Time` to the correct format for SurrealDB.
 - Create a mapping function for each one which exists in the original surrealdb.go library (e.g. `Use`, `Merge`, etc.) but with the scan functionality like in the `Scan` function.
 - Support `LiveNotifications` with the `Result` struct.
 - Eventually remove the extra layer of the surrealdb.go library and directly use the websocket code.
@@ -74,7 +74,6 @@ If you want to scan the result from such a query into a struct, you can use the 
 
 ```go
 type User struct {
-    ID   string
     Name string
 }
 
@@ -96,8 +95,6 @@ Struct tags essentially work the same way as in the `json` package. A full examp
 
 ```go
 type User struct {
-    // this field will be mapped to the "id" key
-    ID   string `db:"id"`
 	// this field will be omitted if it is empty, otherwise it will be mapped to the "name" key
     Name string `db:"name,omitempty"`
 	// this field will be ignored
@@ -109,7 +106,6 @@ type User struct {
 _, err := db.Query("CREATE $john CONTENT $data", map[string]any{
     "john": "users:john",
 	"data": User{
-        ID:   "john",
         Name: "John Doe",
         Age:  42,
     },
@@ -119,3 +115,29 @@ _, err := db.Query("CREATE $john CONTENT $data", map[string]any{
 If your `db` tags would often end up being the same as other tags (for example the `json` tag) you can specify a
 fallback tag using the `SURGO_FALLBACK_TAG` environment variable. If this variable is set, the library will use the
 specified tag as a fallback if no `db` tag is present.
+
+### Time and Duration
+The library supports `time.Time` and `time.Duration` out of the box. They are automatically converted to and from the
+formats which SurrealDB uses. (`datetime` and `duration` respectively) Here is an example:
+
+```go
+type User struct {
+    Name string
+    CreatedAt time.Time
+    OneMilePB time.Duration
+}
+
+_, = db.MustQuery("CREATE $john CONTENT $data", map[string]any{
+    "john": "users:john",
+    "data": User{
+        Name:      "John Doe",
+        CreatedAt: time.Now(),
+		OneMilePB: time.Minute * 6,
+    },
+})
+
+var john User
+err := db.Scan(&john, "SELECT * FROM ONLY $john", map[string]any{
+    "john": "users:john",
+})
+```

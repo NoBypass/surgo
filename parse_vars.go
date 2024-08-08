@@ -9,6 +9,8 @@ func parseVars(vars map[string]any) map[string]any {
 	for k, v := range vars {
 		if isStruct(v) {
 			vars[k] = structToMap(v)
+		} else {
+			vars[k] = parseTimes(v)
 		}
 	}
 
@@ -56,7 +58,7 @@ func structToMap(x any) map[string]any {
 		if isStruct(val) {
 			m[name] = structToMap(val)
 		} else {
-			m[name] = val
+			m[name] = parseTimes(val)
 		}
 	}
 

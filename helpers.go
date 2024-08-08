@@ -5,10 +5,10 @@ import (
 	"time"
 )
 
-func parseTimes(ts any) (string, bool) {
+func parseTimes(ts any) any {
 	switch ts.(type) {
 	case time.Time:
-		return ts.(time.Time).Format(time.RFC3339), true
+		return ts.(time.Time).Format(time.RFC3339)
 	case time.Duration:
 		total := ts.(time.Duration)
 		var unit string
@@ -32,9 +32,10 @@ func parseTimes(ts any) (string, bool) {
 			total = total / time.Nanosecond
 			unit = "ns"
 		}
-		return fmt.Sprintf("%d%s", total, unit), true
+		return fmt.Sprintf("%d%s", total, unit)
+	default:
+		return ts
 	}
-	return "", false
 }
 
 func stringToTime(s string) (time.Time, error) {
