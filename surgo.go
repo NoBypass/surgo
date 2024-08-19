@@ -10,7 +10,12 @@ import (
 var fallbackTag = ""
 
 type DB struct {
-	Conn *surrealdb.DB
+	Conn DBConn
+}
+
+type DBConn interface {
+	Close() error
+	Query(string, any) (any, error)
 }
 
 type Credentials struct {
