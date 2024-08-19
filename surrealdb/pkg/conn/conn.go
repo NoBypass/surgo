@@ -1,6 +1,6 @@
 package conn
 
-import "github.com/NoBypass/surgo/surrealdb/pkg/model"
+import "github.com/NoBypass/surgo/v2/surrealdb/pkg/model"
 
 type Connection interface {
 	Connect(url string) (Connection, error)

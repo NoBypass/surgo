@@ -2,9 +2,9 @@ package surrealdb
 
 import (
 	"fmt"
-	"github.com/NoBypass/surgo/surrealdb/pkg/conn"
-	"github.com/NoBypass/surgo/surrealdb/pkg/constants"
-	"github.com/NoBypass/surgo/surrealdb/pkg/model"
+	"github.com/NoBypass/surgo/v2/surrealdb/pkg/conn"
+	"github.com/NoBypass/surgo/v2/surrealdb/pkg/constants"
+	"github.com/NoBypass/surgo/v2/surrealdb/pkg/model"
 )
 
 // DB is a client for the SurrealDB database that holds the connection.

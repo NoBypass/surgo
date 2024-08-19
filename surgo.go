@@ -2,8 +2,8 @@ package surgo
 
 import (
 	"errors"
-	"github.com/NoBypass/surgo/surrealdb"
-	"github.com/NoBypass/surgo/surrealdb/pkg/conn/gorilla"
+	"github.com/NoBypass/surgo/v2/surrealdb"
+	"github.com/NoBypass/surgo/v2/surrealdb/pkg/conn/gorilla"
 	"os"
 )
 
