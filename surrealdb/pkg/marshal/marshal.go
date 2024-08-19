@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/NoBypass/surgo/surrealdb/pkg/constants"
-	"github.com/NoBypass/surgo/surrealdb/pkg/util"
+	"github.com/NoBypass/surgo/v2/surrealdb/pkg/constants"
+	"github.com/NoBypass/surgo/v2/surrealdb/pkg/util"
 	"reflect"
 )
 
