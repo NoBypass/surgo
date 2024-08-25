@@ -90,7 +90,7 @@ func (db *DB) respToResult(resp any) ([]Result, error) {
 		if m["status"] == "ERR" {
 			resSlice[i] = Result{
 				Data:  nil,
-				Error: fmt.Errorf("%w: %s", ErrQuery, m["result"].(string)),
+				Error: fmt.Errorf("%w: %s", newErrQuery(err), m["result"].(string)),
 			}
 		} else {
 			res := Result{
@@ -99,7 +99,7 @@ func (db *DB) respToResult(resp any) ([]Result, error) {
 			}
 
 			if res.Data == nil {
-				res.Error = ErrNoResult
+				res.Error = newErrNoResult(fmt.Errorf("no result found"))
 			}
 
 			resSlice[i] = res

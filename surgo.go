@@ -1,7 +1,6 @@
 package surgo
 
 import (
-	"errors"
 	"github.com/NoBypass/surgo/v2/surrealdb"
 	"github.com/NoBypass/surgo/v2/surrealdb/pkg/conn/gorilla"
 	"os"
@@ -22,19 +21,12 @@ type Credentials struct {
 	Namespace, Database, Scope, Username, Password string
 }
 
-var (
-	ErrNoConnection       = errors.New("could not connect to SurrealDB")
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrNoResult           = errors.New("no result found")
-	ErrQuery              = errors.New("query failed")
-)
-
 // Connect connects to a SurrealDB instance and returns a DB object.
 func Connect(url string, creds *Credentials) (*DB, error) {
 	ws := gorilla.Create()
 	db, err := surrealdb.New(url, ws)
 	if err != nil {
-		return nil, ErrNoConnection
+		return nil, newErrNoConnection(err)
 	}
 
 	_, err = db.Signin(&surrealdb.Auth{
@@ -45,7 +37,7 @@ func Connect(url string, creds *Credentials) (*DB, error) {
 		Password:  creds.Password,
 	})
 	if err != nil {
-		return nil, ErrInvalidCredentials
+		return nil, newErrInvalidCredentials(err)
 	}
 
 	fallbackTag = os.Getenv("SURGO_FALLBACK_TAG")
