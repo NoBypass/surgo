@@ -5,6 +5,15 @@ import (
 	"time"
 )
 
+func isTime(ts any) bool {
+	switch ts.(type) {
+	case time.Time, time.Duration:
+		return true
+	default:
+		return false
+	}
+}
+
 func parseTimes(ts any) any {
 	switch ts.(type) {
 	case time.Time:

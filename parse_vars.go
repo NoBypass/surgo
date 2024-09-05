@@ -7,10 +7,12 @@ import (
 
 func parseVars(vars map[string]any) map[string]any {
 	for k, v := range vars {
-		if isStruct(v) {
+		if isTime(v) {
+			vars[k] = parseTimes(v)
+		} else if isStruct(v) {
 			vars[k] = structToMap(v)
 		} else {
-			vars[k] = parseTimes(v)
+			vars[k] = v
 		}
 	}
 
