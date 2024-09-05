@@ -57,12 +57,8 @@ func structToMap(x any) map[string]any {
 		}
 
 		val := v.Field(i).Interface()
-		if isStruct(val) {
-			m[name] = structToMap(val)
-		} else {
-			m[name] = parseTimes(val)
-		}
+		m[name] = val
 	}
 
-	return m
+	return parseVars(m)
 }
