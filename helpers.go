@@ -88,6 +88,7 @@ func (db *DB) respToResult(resp any) ([]Result, error) {
 		respSlice = []any{resp}
 	}
 	resSlice := make([]Result, len(respSlice))
+	var finalErr error
 
 	for i, s := range respSlice {
 		m := s.(map[string]any)
@@ -97,9 +98,13 @@ func (db *DB) respToResult(resp any) ([]Result, error) {
 		}
 
 		if m["status"] == "ERR" {
+			errMsg := fmt.Errorf("%w: %s", newErrQuery(err), m["result"].(string))
+			if finalErr == nil {
+				finalErr = errMsg
+			}
 			resSlice[i] = Result{
 				Data:  nil,
-				Error: fmt.Errorf("%w: %s", newErrQuery(err), m["result"].(string)),
+				Error: errMsg,
 			}
 		} else {
 			res := Result{
@@ -117,5 +122,5 @@ func (db *DB) respToResult(resp any) ([]Result, error) {
 		resSlice[i].Duration = d
 	}
 
-	return resSlice, nil
+	return resSlice, finalErr
 }
