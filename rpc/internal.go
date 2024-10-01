@@ -31,7 +31,7 @@ func (c *WebsocketConn) receive(msg []byte) {
 	ch, ok := c.responses[res.ID]
 	c.mu.RUnlock()
 	if !ok {
-		c.logger.Error(err)
+		c.logger.Error(errs.ErrUnexpectedResponseID.Withf("id: %s", res.ID))
 		return
 	}
 

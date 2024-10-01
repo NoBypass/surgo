@@ -11,13 +11,14 @@ type SurgoError struct {
 }
 
 var (
-	ErrNoConnection       = &SurgoError{fmt.Errorf("could not connect to SurrealDB")}
-	ErrInvalidCredentials = &SurgoError{fmt.Errorf("invalid credentials")}
-	ErrNoResult           = &SurgoError{fmt.Errorf("no result found")}
-	ErrOutOfBounds        = &SurgoError{fmt.Errorf("index out of bounds")}
-	ErrDatabase           = &SurgoError{fmt.Errorf("database error")}
-	ErrUnmarshal          = &SurgoError{fmt.Errorf("unmarshal error")}
-	ErrMarshal            = &SurgoError{fmt.Errorf("marshal error")}
+	ErrNoConnection         = &SurgoError{fmt.Errorf("could not connect to SurrealDB")}
+	ErrInvalidCredentials   = &SurgoError{fmt.Errorf("invalid credentials")}
+	ErrNoResult             = &SurgoError{fmt.Errorf("no result found")}
+	ErrOutOfBounds          = &SurgoError{fmt.Errorf("index out of bounds")}
+	ErrDatabase             = &SurgoError{fmt.Errorf("database error")}
+	ErrUnmarshal            = &SurgoError{fmt.Errorf("unmarshal error")}
+	ErrMarshal              = &SurgoError{fmt.Errorf("marshal error")}
+	ErrUnexpectedResponseID = &SurgoError{fmt.Errorf("unexpected response id")}
 )
 
 func (e *SurgoError) With(err error) error {

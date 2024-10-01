@@ -18,18 +18,41 @@ func (m *Marshaler) Marshal(vars map[string]any) map[string]any {
 func (m *Marshaler) marshal(v any) any {
 	if isTime(v) {
 		return parseTimes(v)
-	} else if m.isStruct(v) {
-		return m.structToMap(v)
-	} else if m.isSlice(v) {
+	} else if isStruct(v) {
+		return m.handleStruct(v)
+	} else if isSlice(v) {
 		return m.handleSlice(v)
+	} else if isMap(v) {
+		return m.handleMap(v)
 	} else {
 		return v
 	}
 }
 
-func (m *Marshaler) isSlice(x any) bool {
+func isMap(x any) bool {
+	t := reflect.TypeOf(x)
+	return t.Kind() == reflect.Map || (t.Kind() == reflect.Ptr && t.Elem().Kind() == reflect.Map)
+}
+
+func isSlice(x any) bool {
 	t := reflect.TypeOf(x)
 	return t.Kind() == reflect.Slice || (t.Kind() == reflect.Ptr && t.Elem().Kind() == reflect.Slice)
+}
+
+func isStruct(x any) bool {
+	t := reflect.TypeOf(x)
+	return t.Kind() == reflect.Struct || (t.Kind() == reflect.Ptr && t.Elem().Kind() == reflect.Struct)
+}
+
+func (m *Marshaler) handleMap(x any) map[string]any {
+	t := reflect.TypeOf(x)
+	v := reflect.ValueOf(x)
+
+	if t.Kind() == reflect.Ptr {
+		return m.Marshal(v.Elem().Interface().(map[string]any))
+	}
+
+	return m.Marshal(v.Interface().(map[string]any))
 }
 
 func (m *Marshaler) handleSlice(x any) []any {
@@ -49,12 +72,7 @@ func (m *Marshaler) handleSlice(x any) []any {
 	return resolved
 }
 
-func (m *Marshaler) isStruct(x any) bool {
-	t := reflect.TypeOf(x)
-	return t.Kind() == reflect.Struct || (t.Kind() == reflect.Ptr && t.Elem().Kind() == reflect.Struct)
-}
-
-func (m *Marshaler) structToMap(x any) map[string]any {
+func (m *Marshaler) handleStruct(x any) map[string]any {
 	t := reflect.TypeOf(x)
 	v := reflect.ValueOf(x)
 
