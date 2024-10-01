@@ -8,8 +8,7 @@ import (
 
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-var seededRand *rand.Rand = rand.New( //nolint:gosec
-	rand.NewSource(time.Now().UnixNano()))
+var seededRand = rand.New(rand.NewSource(time.Now().UnixNano()))
 var seededRandLock sync.Mutex
 
 func StringWithCharset(length int, charset string) string {

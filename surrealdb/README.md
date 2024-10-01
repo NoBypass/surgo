@@ -1,1 +1,0 @@
-This package's code is vendored from `github.com/surrealdb/surrealdb.go`.
