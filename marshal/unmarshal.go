@@ -110,10 +110,12 @@ func (m *Marshaler) sliceDecoder(src, dest reflect.Value) error {
 }
 
 func (m *Marshaler) interfaceDecoder(src, dest reflect.Value) error {
-	if dest.IsNil() {
-		dest.Set(src)
+	if src.Elem().Type().AssignableTo(dest.Type()) {
+		dest.Set(src.Elem())
+		return nil
+	} else {
+		return errs.ErrUnmarshal.Withf("cannot unmarshal interface")
 	}
-	return nil
 }
 
 func (m *Marshaler) mapDecoder(src, dest reflect.Value) error {

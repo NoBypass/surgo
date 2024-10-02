@@ -153,4 +153,10 @@ func TestMarshaler_Unmarshal(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, testStruct{&nestedStruct{"test"}}, s)
 	})
+	t.Run("alice of any to slice of defined", func(t *testing.T) {
+		var s []string
+		err := m.Unmarshal([]any{"a", "b"}, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, []string{"a", "b"}, s)
+	})
 }

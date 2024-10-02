@@ -35,6 +35,14 @@ func TestIntegration(t *testing.T) {
 
 	defer db.Close()
 
+	var m []map[string]any
+	something := db.Scan(&m, "CREATE test:1234 CONTENT $test RETURN AFTER", map[string]any{
+		"test": map[string]any{
+			"bytes": []byte("test"),
+		},
+	})
+	t.Logf("result: %v | %v", something, m)
+
 	result := db.Query("CREATE test:test CONTENT $test", map[string]any{
 		"test": TestObj{
 			Title:    "test",
@@ -96,6 +104,28 @@ func TestIntegration(t *testing.T) {
 	ctx := context.WithValue(context.Background(), "test", "test")
 	_ = db.WithContext(ctx).Query("SELECT * FROM ONLY test:unavailable", map[string]any{})
 	_ = db.WithContext(ctx).Scan(test2, "SELECT * FROM ONLY test:unavailable", map[string]any{})
+
+	result3 := db.Query("CREATE test:abc CONTENT $tests", map[string]any{
+		"tests": map[string]any{
+			"title": "test",
+			"tests": []SecondTest{
+				{
+					ID:     1,
+					Thing:  "test",
+					Ignore: "ignore",
+					Omit:   "omit",
+				},
+				{
+					ID:     2,
+					Thing:  "test2",
+					Ignore: "ignore2",
+					Omit:   "",
+				},
+			},
+		},
+	})
+	a, b := result3.First()
+	t.Logf("result: %v | %v", a, b)
 }
 
 type testLogger struct {
