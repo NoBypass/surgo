@@ -2,8 +2,7 @@ package marshal
 
 import (
 	"fmt"
-	"regexp"
-	"strconv"
+	"reflect"
 	"time"
 )
 
@@ -49,28 +48,13 @@ func parseTimes(ts any) any {
 	}
 }
 
-func stringToTime(s string) (time.Time, error) {
-	t, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		return time.Time{}, err
+func (m *Marshaler) tagOf(field reflect.StructField) string {
+	dbTag := field.Tag.Get("db")
+	if dbTag == "" {
+		dbTag = field.Tag.Get(string(*m))
 	}
-	return t, nil
-}
-
-func stringToDuration(s string) (time.Duration, error) {
-	re := regexp.MustCompile(`(\d+)(y|w|d|h|ms|m|s|µs|us|ns)`)
-	matches := re.FindAllStringSubmatch(s, -1)
-
-	var duration time.Duration
-	for _, match := range matches {
-		value, err := strconv.Atoi(match[1])
-		if err != nil {
-			return 0, err
-		}
-		unit := match[2]
-
-		duration += time.Duration(value) * units[unit]
+	if dbTag == "" {
+		dbTag = field.Name
 	}
-
-	return duration, nil
+	return dbTag
 }
