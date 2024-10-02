@@ -27,6 +27,9 @@ func (m *Marshaler) unmarshal(src, dest reflect.Value) error {
 	if src.Kind() == reflect.Interface {
 		src = src.Elem()
 	}
+	if srcType, destType := src.Type(), dest.Type(); srcType != destType && srcType.ConvertibleTo(destType) {
+		src = src.Convert(destType)
+	}
 
 	switch dest.Kind() {
 	case reflect.Bool:

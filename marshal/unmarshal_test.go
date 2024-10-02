@@ -170,4 +170,11 @@ func TestMarshaler_Unmarshal(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, testStruct{"test", 42}, s)
 	})
+	t.Run("type alias unmarshal", func(t *testing.T) {
+		type testAlias string
+		var a testAlias
+		err := m.Unmarshal("test", &a)
+		assert.NoError(t, err)
+		assert.Equal(t, testAlias("test"), a)
+	})
 }
