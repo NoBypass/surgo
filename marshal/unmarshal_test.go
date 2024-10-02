@@ -159,4 +159,15 @@ func TestMarshaler_Unmarshal(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, []string{"a", "b"}, s)
 	})
+	t.Run("map as any to struct ", func(t *testing.T) {
+		type testStruct struct {
+			Test string
+			Num  int
+		}
+		var s testStruct
+		var in any = map[string]any{"Test": "test", "Num": 42}
+		err := m.Unmarshal(in, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, testStruct{"test", 42}, s)
+	})
 }
