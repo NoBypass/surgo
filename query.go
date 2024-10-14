@@ -22,7 +22,7 @@ type (
 // Query executes the query and returns the results. The error is
 // only not nil if the whole call failed. If a query fails, the error
 // is stored in the result struct.
-func (db *DB) Query(query string, vars map[string]any) (result Result) {
+func (db *DB) Query(query string, vars map[string]any) (result *Result) {
 	ctx, cancel := context.WithTimeout(safeContext(db.ctx), db.timeout)
 	defer cancel()
 
@@ -37,13 +37,13 @@ func (db *DB) Query(query string, vars map[string]any) (result Result) {
 
 	res, err := db.Conn.Send(ctx, "query", []any{query, vars})
 	if err != nil {
-		return Result{Error: err}
+		return &Result{Error: err}
 	}
 
 	db.logger.Trace(ctx, TraceResponse, res)
 
 	queries, err := resultsToQuery(res.([]any))
-	return Result{
+	return &Result{
 		Error:   err,
 		Queries: queries,
 	}
