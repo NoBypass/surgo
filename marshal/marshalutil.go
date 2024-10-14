@@ -31,7 +31,7 @@ func isTime(ts any) bool {
 func parseTimes(ts any) any {
 	switch ts.(type) {
 	case time.Time:
-		return ts.(time.Time).Format(time.RFC3339)
+		return ts.(time.Time).Format("d\"2006-01-02T15:04:05Z07:00\"")
 	case time.Duration:
 		var result string
 		d := ts.(time.Duration)
