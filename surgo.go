@@ -49,6 +49,7 @@ func Connect(url string, creds *Credentials, opts ...Option) (*DB, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), db.timeout)
 	defer cancel()
+
 	_, err = c.Send(ctx, "signin", []any{creds})
 	if err != nil {
 		return nil, errs.ErrInvalidCredentials.With(err)

@@ -10,7 +10,7 @@ import (
 
 func (c *WebsocketConn) listen() {
 	for {
-		_, msg, err := c.Read(context.TODO())
+		_, msg, err := c.Read(context.Background())
 		if err != nil {
 			c.logger.Error(err)
 			return

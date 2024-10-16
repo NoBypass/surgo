@@ -144,6 +144,38 @@ Unmarshal and Scan functions will automatically convert the SurrealDB formats ba
 If you don't like using the `db` tag, or your struct already uses it for something else, you can use the `fallback` tag.
 For example if most of your structs use the `json` tag, you can set the fallback tag to `json`. This way for the fields
 which don't have a `db` tag, the library will look for a `json` tag. Here is an example:
+````go
+type User struct {
+	// `dbName` will be used for marshaling since the db tag takes priority over the fallback tag
+    Name string `json:"name,omitempty" db:"dbName"`
+	// `birthday` will be used for marshaling since no db tag was provided
+    Birthday time.Time `json:"birthday"`
+}
+
+db, err := surgo.Connect("ws://localhost:8000", &surgo.Credentials{
+    // enter your credentials here
+}, surgo.WithFallbackTag("json"))
+if err != nil {
+    // handle error
+}
+
+err := db.Query("CREATE $john CONTENT $data", map[string]any{
+    "john": "users:john",
+    "data": User{
+        Name: "John",
+        Birthday: time.Date(1980, 1, 1, 0, 0, 0, 0, time.UTC),
+    },
+}).Error
+````
+
+Running this will result in this entry in SurrealDB:
+```
+{
+    id: 'someRandomString',
+    dbName: 'John',
+    birthday: '1980-01-01T00:00:00Z'
+}
+```
 
 ### Tracing & Context
 You can use the `WithLogger` option to pass a custom logger/tracer to the `Connect` function. The logger/tracer must 
@@ -170,4 +202,15 @@ result := db.WithContext(ctx).Query("SELECT * FROM ONLY $john", map[string]any{
 })
 ```
 
-Of course, you can also use a cancelable context or timeout context.
+Of course, you can also use a cancelable context or timeout context.\
+These are the possible traces (They will be called in the order they are listed):
+
+| TraceType | Description                                                                                                                                                                               |
+| --- |-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| TraceQuery | This signals the start of a query and the data will be the query `string`                                                                                                                 |
+| TraceVars | At this point all vars were computed and the data will be a `map[string]any`                                                                                                              |
+| TraceResponse | This signals that SurrealDB responded and the data it responded with will be a `map[string]any`                                                                                           |
+| TraceEnd | This signals the end of the query and the data will be the value which the called function returned * |
+
+\* This will be either of type `*surgo.Result` for a `DB.Query` call or simply `error` for a `DB.Scan` call.\
+If an error occurs between steps, these traces will be skipped and `TraceEnd` will be called immediately.

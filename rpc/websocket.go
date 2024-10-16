@@ -18,7 +18,7 @@ type Logger interface {
 }
 
 func NewWebsocketConn(url string, logger Logger) (*WebsocketConn, error) {
-	c, _, err := websocket.Dial(context.TODO(), url, nil)
+	c, _, err := websocket.Dial(context.Background(), url, nil)
 	if err != nil {
 		return nil, err
 	}

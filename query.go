@@ -53,10 +53,10 @@ func (db *DB) Query(query string, vars map[string]any) (result *Result) {
 // If multiple results are expected, a pointer to a slice of structs or maps can be passed.
 // NOTE: Only the last result (the last query if multiple are present) is scanned into the
 // given object. If any of the queries fail, the error is returned.
-func (db DB) Scan(dest any, query string, vars map[string]any) error {
+func (db DB) Scan(dest any, query string, vars map[string]any) (err error) {
 	db.ctx = context.WithValue(safeContext(db.ctx), scanCtxKey, true)
 	defer func() {
-		db.logger.Trace(db.ctx, TraceEnd, nil)
+		db.logger.Trace(db.ctx, TraceEnd, err)
 	}()
 
 	result := db.Query(query, vars)
