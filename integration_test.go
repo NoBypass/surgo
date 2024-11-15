@@ -35,6 +35,9 @@ func TestIntegration(t *testing.T) {
 
 	defer db.Close()
 
+	a, err := db.Query("RELATE test:123->abc->test:1234", map[string]any{}).First()
+	t.Logf("result: %v | %v", a, err)
+
 	var m []map[string]any
 	something := db.Scan(&m, "CREATE test:1234 CONTENT $test RETURN AFTER", map[string]any{
 		"test": map[string]any{

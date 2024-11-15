@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"github.com/NoBypass/surgo/v2/errs"
@@ -51,15 +52,20 @@ func (c *WebsocketConn) Send(ctx context.Context, method string, params []any) (
 		c.mu.Unlock()
 	}()
 
-	reqBytes, err := json.Marshal(&Request{
+	req := &Request{
 		ID:     id,
 		Method: method,
 		Params: params,
-	})
-	if err != nil {
+	}
+
+	buf := new(bytes.Buffer)
+	encoder := json.NewEncoder(buf)
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(req); err != nil {
 		return nil, err
 	}
-	err = c.Write(ctx, websocket.MessageText, reqBytes)
+
+	err := c.Write(ctx, websocket.MessageText, buf.Bytes())
 	if err != nil {
 		return nil, err
 	}
