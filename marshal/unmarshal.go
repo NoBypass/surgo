@@ -18,12 +18,17 @@ func (m *Marshaler) Unmarshal(src, dest any) (err error) {
 
 	if destVal.Kind() != reflect.Ptr || destVal.IsNil() {
 		return errs.ErrUnmarshal.Withf("dest must be a non-nil pointer")
+	} else if src == nil {
+		return nil
 	}
 
 	return m.unmarshal(reflect.ValueOf(src), destVal.Elem())
 }
 
 func (m *Marshaler) unmarshal(src, dest reflect.Value) error {
+	if src.IsZero() {
+		return nil
+	}
 	if src.Kind() == reflect.Interface {
 		src = src.Elem()
 	}
@@ -149,13 +154,20 @@ func (m *Marshaler) structDecoder(src, dest reflect.Value) error {
 		field := dest.Type().Field(i)
 		tag := m.tagOf(field)
 
-		mapVal := src.MapIndex(reflect.ValueOf(tag))
-		if !mapVal.IsValid() {
+		fieldVal := dest.Field(i)
+		if !fieldVal.CanSet() {
 			continue
 		}
 
-		fieldVal := dest.Field(i)
-		if !fieldVal.CanSet() {
+		if field.Anonymous {
+			if err := m.unmarshal(src, fieldVal); err != nil {
+				return err
+			}
+			continue
+		}
+
+		mapVal := src.MapIndex(reflect.ValueOf(tag))
+		if !mapVal.IsValid() {
 			continue
 		}
 

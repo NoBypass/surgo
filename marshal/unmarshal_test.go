@@ -153,7 +153,7 @@ func TestMarshaler_Unmarshal(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, testStruct{&nestedStruct{"test"}}, s)
 	})
-	t.Run("alice of any to slice of defined", func(t *testing.T) {
+	t.Run("slice of any to slice of defined", func(t *testing.T) {
 		var s []string
 		err := m.Unmarshal([]any{"a", "b"}, &s)
 		assert.NoError(t, err)
@@ -176,5 +176,36 @@ func TestMarshaler_Unmarshal(t *testing.T) {
 		err := m.Unmarshal("test", &a)
 		assert.NoError(t, err)
 		assert.Equal(t, testAlias("test"), a)
+	})
+	t.Run("src is null", func(t *testing.T) {
+		var s string
+		err := m.Unmarshal(nil, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, "", s)
+	})
+	t.Run("null in src object", func(t *testing.T) {
+		type testStruct struct {
+			Test *struct {
+				A string
+			} `db:"test"`
+		}
+		var s testStruct
+		err := m.Unmarshal(map[string]any{"test": nil}, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, testStruct{
+			Test: nil,
+		}, s)
+	})
+	t.Run("anonymous struct", func(t *testing.T) {
+		type Anonymous struct {
+			Test string `db:"test"`
+		}
+		type testStruct struct {
+			Anonymous
+		}
+		var s testStruct
+		err := m.Unmarshal(map[string]any{"test": "test"}, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, "test", s.Test)
 	})
 }
