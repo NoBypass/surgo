@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -152,7 +153,7 @@ func (m *Marshaler) mapDecoder(src, dest reflect.Value) error {
 func (m *Marshaler) structDecoder(src, dest reflect.Value) error {
 	for i := 0; i < dest.NumField(); i++ {
 		field := dest.Type().Field(i)
-		tag := m.tagOf(field)
+		tag := strings.Split(m.tagOf(field), ",")[0]
 
 		fieldVal := dest.Field(i)
 		if !fieldVal.CanSet() {

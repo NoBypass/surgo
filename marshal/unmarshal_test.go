@@ -208,4 +208,31 @@ func TestMarshaler_Unmarshal(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "test", s.Test)
 	})
+	t.Run("test with omitempty db field", func(t *testing.T) {
+		type testStruct struct {
+			Test string `db:",omitempty"`
+		}
+		var s testStruct
+		err := m.Unmarshal(map[string]any{"Test": ""}, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, testStruct{}, s)
+	})
+	t.Run("test with nonempty omitempty db field", func(t *testing.T) {
+		type testStruct struct {
+			Test string `db:"Test,omitempty"`
+		}
+		var s testStruct
+		err := m.Unmarshal(map[string]any{"Test": "test"}, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, testStruct{"test"}, s)
+	})
+	t.Run("test with undefined nonempty omitempty db field", func(t *testing.T) {
+		type testStruct struct {
+			Test string `db:",omitempty"`
+		}
+		var s testStruct
+		err := m.Unmarshal(map[string]any{"Test": "test"}, &s)
+		assert.NoError(t, err)
+		assert.Equal(t, testStruct{"test"}, s)
+	})
 }

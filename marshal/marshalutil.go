@@ -53,8 +53,8 @@ func (m *Marshaler) tagOf(field reflect.StructField) string {
 	if dbTag == "" {
 		dbTag = field.Tag.Get(string(*m))
 	}
-	if dbTag == "" {
-		dbTag = field.Name
+	if dbTag == "" || dbTag[0] == ',' {
+		dbTag = field.Name + dbTag
 	}
 	return dbTag
 }
